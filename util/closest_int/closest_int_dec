@@ -12,7 +12,7 @@ DESCRIPTION
 
     If exact number exists in given space - prints it as the result.
 
-    If exact number does not exist in given space - prints a positive or negative direction closest entryarg_opt_ ue to the target as the result.
+    If exact number does not exist in given space - prints a positive or negative direction closest entry to the target as the result.
 
     If no suitable number is found prints the error message and exits with code 1.
 
@@ -32,7 +32,7 @@ DESCRIPTION
         45
 
     -d DIRECTION
-        The search direction.
+        Search direction.
 
         Positive - p (default)
         Negative - n
@@ -77,15 +77,25 @@ while getopts t:s:d:gh name; do
   esac
 done
 
+# Option -g
+
+debug="$opt_g"
+
+# Option -t
+
 [ ! "$opt_t" ] && {
   echo "$(basename $0): Required option missing - -t NUMBER"
   exit 2
 }
 
 [ ! "$(is_dec "$opt_t")" ] && {
-  echo "$(basename $0): The number given as argument NUMBER for option -t is not a signed decimal integer number."
+  echo "$(basename $0): The number given as argument NUMBER for option -t is not a signed integer number."
   exit 2
 }
+
+tgt="$arg_opt_t"
+
+# Option -s
 
 [ ! "$opt_s" ] && {
   echo "$(basename $0): Required option missing - -s FILE"
@@ -97,15 +107,18 @@ done
   exit 2
 }
 
+space="$(<"$arg_opt_s")"
+
+# Option -d
+
 [ "$arg_opt_d" ] && [ ! "$arg_opt_d" = "p" ] && [ ! "$arg_opt_d" = "n" ] && {
   echo "$(basename $0): The DIRECTION argument for option -d is not valid. It must be either 'p' or 'n'."
   exit 2
 }
 
-tgt="$arg_opt_t"
-dir="$arg_opt_d"
-space="$(<"$arg_opt_s")"
-debug="$opt_g"
+dir="${arg_opt_d:-"p"}"
+
+# Binary search
 
 print_state() {
   [ ! "$debug" ] && return
@@ -133,8 +146,6 @@ not_found() {
   echo "$(basename $0): No search space number in the given direction from the target number."
   exit 1
 }
-
-# Binary search
 
 while true; do
   # Set the iteration state
@@ -167,7 +178,7 @@ while true; do
     [ "$dir" = "p" ] && [ "$tgt" -lt "$min" ] && found "$min"
     [ "$dir" = "n" ] && [ "$tgt" -gt "$max" ] && found "$max"
     [ "$dir" = "p" ] && found "$max"
-    [ "$dir" = "n" ] && found "$mix"
+    [ "$dir" = "n" ] && found "$min"
   }
 
   # Shrink the search space by half

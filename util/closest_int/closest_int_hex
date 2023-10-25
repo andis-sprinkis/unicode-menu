@@ -1,0 +1,206 @@
+#!/usr/bin/env sh
+set -e
+
+help_info="NAME
+    $(basename "$0") - Find the closest integer to target in the positive or the negative direction.
+
+SYNOPSIS
+    $(basename "$0") -t INTEGER [-d DIRECTION] -s FILE [-g]
+
+DESCRIPTION
+    In FILE containing a list of integers, searches for the closest integer to the target INTEGER in the positive (p) or the negative (n) direction.
+
+    If exact number exists in given space - prints it as the result.
+
+    If exact number does not exist in given space - prints a positive or negative direction closest entry to the target as the result.
+
+    If no suitable number is found prints the error message and exits with code 1.
+
+    -t INTEGER 
+        Target number - a signed decimal INTEGER.
+
+    -s FILE
+        FILE containing the search space.
+
+        File contents - a linebreak delimited, sorted, min-to-max directional list of non-repeating, signed hexadecimal integers.
+
+        For example:
+        -E01EF
+        0000
+        0001
+        0007
+        00AB
+        E01EF
+        10FFFD
+
+    -d DIRECTION
+        Search direction.
+
+        Positive - p (default)
+        Negative - n
+
+    -g
+        Prints debug information during the search.
+
+    -h
+        Prints this message.
+"
+
+hex_to_dec() {
+  sign="" signed=""
+  sign="$(cut -c 1 <<< "$1")"
+  [ "$sign" = "-" ] || [ "$sign" = "+" ] && signed="1"
+
+  [ "$signed" ] && {
+    printf '%d' "${sign}0x$(echo "$1" | cut -c 2)"
+    return
+  }
+
+  printf '%d' "0x$1";
+}
+
+opt_t=
+opt_s=
+opt_d=
+opt_g=
+opt_h=
+while getopts t:s:d:gh name; do
+  case $name in
+    t) opt_t=1
+       arg_opt_t="$OPTARG"
+       ;;
+    s) opt_s=1
+       arg_opt_s="$OPTARG"
+       ;;
+    d) opt_d=1
+       arg_opt_d="$OPTARG"
+       ;;
+    b) opd_b=1
+       arg_opt_b="$OPTARG"
+       ;;
+    g) opt_g=1
+       ;;
+    h) echo "$help_info"
+       exit
+      ;;
+    ?) echo "$help_info"
+       exit 2
+       ;;
+  esac
+done
+
+# Option -g
+
+debug="$opt_g"
+
+# Option -t
+
+[ ! "$opt_t" ] && {
+  echo "$(basename $0): Required option missing - -t NUMBER"
+  exit 2
+}
+
+tgt_orig="$arg_opt_t"
+tgt="$(hex_to_dec "$tgt_orig")"
+
+# Option -s
+
+[ ! "$opt_s" ] && {
+  echo "$(basename $0): Required option missing - -s FILE"
+  exit 2
+}
+
+[ ! -f "$arg_opt_s" ] && {
+  echo "$(basename $0): The file path given in search space argument FILE for option -s doesn't point to a file."
+  exit 2
+}
+
+space="$(<"$arg_opt_s")"
+
+# Option -d
+
+[ "$arg_opt_d" ] && [ ! "$arg_opt_d" = "p" ] && [ ! "$arg_opt_d" = "n" ] && {
+  echo "$(basename $0): The DIRECTION argument for option -d is not valid. It must be either 'p' or 'n'."
+  exit 2
+}
+
+dir="${arg_opt_d:-"p"}"
+
+# Binary search
+
+print_state() {
+  [ ! "$debug" ] && return
+
+  state="Iteration:${itr}
+Target:${tgt}
+Direction:${dir}
+Space:$(echo ${space})
+Length of the space:${len}
+Index of the middle:${idx_mid}
+Middle:${mid}
+Minimum:${min}
+Maximum:${max}"
+
+  column -t -s ':' -W 2 <<< "$state"
+  echo
+}
+
+found() {
+  print_state
+  printf "%0${#mid_orig}X" "$1"
+  exit
+}
+
+not_found() {
+  echo "$(basename $0): No search space number in the given direction from the target number."
+  exit 1
+}
+
+while true; do
+  # Set the iteration state
+
+  itr="$(("$itr" + "1"))"
+  len="$(wc -l <<< "$space")"
+
+  min_orig="$(head -n 1 <<< "$space")"
+  min="$(hex_to_dec "$min_orig")"
+
+  max_orig="$(tail -n 1 <<< "$space")"
+  max="$(hex_to_dec "$max_orig")"
+
+  idx_mid="$([ "$(("$len" % "2"))" -gt "0" ] && echo "$((("$len" / "2") + "1"))" || echo "$(("$len" / "2"))")"
+
+  mid_orig="$(echo "$space" | sed "$idx_mid!d")"
+  mid="$(hex_to_dec "$mid_orig")"
+
+  print_state
+
+  # Check the target
+
+  [ "$tgt" = "$mid" ] && found "$mid"
+  [ "$tgt" = "$min" ] && found "$min"
+  [ "$tgt" = "$max" ] && found "$max"
+
+  [ "$dir" = "p" ] && [ "$tgt" -gt "$max" ] && not_found
+  [ "$dir" = "n" ] && [ "$tgt" -lt "$min" ] && not_found
+
+  [ "$len" = "1" ] && {
+    [ "$dir" = "p" ] && [ "$tgt" -gt "$mid" ] && not_found
+    [ "$dir" = "n" ] && [ "$tgt" -lt "$mid" ] && not_found
+    found "$mid"
+  }
+
+  [ "$len" = "2" ] && {
+    [ "$dir" = "p" ] && [ "$tgt" -lt "$min" ] && found "$min"
+    [ "$dir" = "n" ] && [ "$tgt" -gt "$max" ] && found "$max"
+    [ "$dir" = "p" ] && found "$max"
+    [ "$dir" = "n" ] && found "$min"
+  }
+
+  # Shrink the search space by half
+
+  [ "$tgt" -gt "$mid" ] && space="$(tail -n "+$idx_mid" <<< "$space")" && continue
+  [ "$tgt" -lt "$mid" ] && space="$(head -n "$idx_mid" <<< "$space")" && continue
+
+  print_state
+done
