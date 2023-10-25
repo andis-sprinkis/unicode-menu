@@ -22,14 +22,16 @@ DESCRIPTION
     -s FILE
         FILE containing the search space.
 
-        File contents - a linebreak delimited, sorted, min-to-max directional list of non-repeating, signed decimal integers.
+        File contents - a linebreak delimited, sorted, min-to-max directional list of non-repeating, signed hexadecimal integers.
 
         For example:
-        -100
-        4
-        5
-        9
-        45
+        -E01EF
+        0000
+        0001
+        0007
+        00AB
+        E01EF
+        10FFFD
 
     -d DIRECTION
         Search direction.
@@ -44,10 +46,17 @@ DESCRIPTION
         Prints this message.
 "
 
-is_dec() {
-  set +e
-  [ "$1" -eq "$1" 2> /dev/null ] && echo "1"
-  set -e
+hex_to_dec() {
+  sign="" signed=""
+  sign="$(cut -c 1 <<< "$1")"
+  [ "$sign" = "-" ] || [ "$sign" = "+" ] && signed="1"
+
+  [ "$signed" ] && {
+    printf '%d' "${sign}0x$(echo "$1" | cut -c 2)"
+    return
+  }
+
+  printf '%d' "0x$1";
 }
 
 opt_t=
@@ -65,6 +74,9 @@ while getopts t:s:d:gh name; do
        ;;
     d) opt_d=1
        arg_opt_d="$OPTARG"
+       ;;
+    b) opd_b=1
+       arg_opt_b="$OPTARG"
        ;;
     g) opt_g=1
        ;;
@@ -88,12 +100,8 @@ debug="$opt_g"
   exit 2
 }
 
-[ ! "$(is_dec "$opt_t")" ] && {
-  echo "$(basename $0): The number given as argument NUMBER for option -t is not a signed integer number."
-  exit 2
-}
-
-tgt="$arg_opt_t"
+tgt_orig="$arg_opt_t"
+tgt="$(hex_to_dec "$tgt_orig")"
 
 # Option -s
 
@@ -102,10 +110,10 @@ tgt="$arg_opt_t"
   exit 2
 }
 
-[ ! -f "$arg_opt_s" ] && {
-  echo "$(basename $0): The file path given in search space argument FILE for option -s doesn't point to a file."
-  exit 2
-}
+# [ ! -f "$arg_opt_s" ] && {
+#   echo "$(basename $0): The file path given in search space argument FILE for option -s doesn't point to a file."
+#   exit 2
+# }
 
 space="$(<"$arg_opt_s")"
 
@@ -124,14 +132,14 @@ print_state() {
   [ ! "$debug" ] && return
 
   state="Iteration:${itr}
-Target:${tgt}
+Target:${tgt} / ${tgt_orig}
 Direction:${dir}
 Space:$(echo ${space})
 Length of the space:${len}
 Index of the middle:${idx_mid}
-Middle:${mid}
-Minimum:${min}
-Maximum:${max}"
+Middle:${mid} / ${mid_orig}
+Minimum:${min} / ${min_orig}
+Maximum:${max} / ${max_orig}"
 
   column -t -s ':' -W 2 <<< "$state"
   echo
@@ -139,7 +147,8 @@ Maximum:${max}"
 
 found() {
   print_state
-  echo "$1"; exit
+  echo "$1"
+  exit
 }
 
 not_found() {
@@ -150,20 +159,27 @@ not_found() {
 while true; do
   # Set the iteration state
 
-  len="$(wc -l <<< "$space")"
-  min="$(head -n 1 <<< "$space")"
-  max="$(tail -n 1 <<< "$space")"
-  idx_mid="$([ "$(("$len" % "2"))" -gt "0" ] && echo "$((("$len" / "2") + "1"))" || echo "$(("$len" / "2"))")"
-  mid="$(echo "$space" | sed "$idx_mid!d")"
   itr="$(("$itr" + "1"))"
+  len="$(wc -l <<< "$space")"
+
+  min_orig="$(head -n 1 <<< "$space")"
+  min="$(hex_to_dec "$min_orig")"
+
+  max_orig="$(tail -n 1 <<< "$space")"
+  max="$(hex_to_dec "$max_orig")"
+
+  idx_mid="$([ "$(("$len" % "2"))" -gt "0" ] && echo "$((("$len" / "2") + "1"))" || echo "$(("$len" / "2"))")"
+
+  mid_orig="$(echo "$space" | sed "$idx_mid!d")"
+  mid="$(hex_to_dec "$mid_orig")"
 
   print_state
 
   # Check the target
 
-  [ "$tgt" = "$mid" ] && found "$mid"
-  [ "$tgt" = "$min" ] && found "$min"
-  [ "$tgt" = "$max" ] && found "$max"
+  [ "$tgt" = "$mid" ] && found "$mid_orig"
+  [ "$tgt" = "$min" ] && found "$min_orig"
+  [ "$tgt" = "$max" ] && found "$max_orig"
 
   [ "$dir" = "p" ] && [ "$tgt" -gt "$max" ] && not_found
   [ "$dir" = "n" ] && [ "$tgt" -lt "$min" ] && not_found
@@ -177,8 +193,8 @@ while true; do
   [ "$len" = "2" ] && {
     [ "$dir" = "p" ] && [ "$tgt" -lt "$min" ] && found "$min"
     [ "$dir" = "n" ] && [ "$tgt" -gt "$max" ] && found "$max"
-    [ "$dir" = "p" ] && found "$max"
-    [ "$dir" = "n" ] && found "$min"
+    [ "$dir" = "p" ] && found "$max_orig"
+    [ "$dir" = "n" ] && found "$min_orig"
   }
 
   # Shrink the search space by half

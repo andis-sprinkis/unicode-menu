@@ -2,10 +2,10 @@
 set -e
 dir=$(cd -P -- "$(dirname -- "$0")" && pwd -P)
 
-"${dir}/util/menu_item_character_to_character" "$(
-  "${dir}/util/menu_items_characters" $(
-    "${dir}/util/menu_item_block_to_range" "$(
-      "${dir}/util/menu_items_blocks" | dmenu
+"${dir}/menu_item_character_to_character" "$(
+  "${dir}/menu_items_characters" $(
+    "${dir}/menu_item_block_to_range" "$(
+      "${dir}/menu_items_blocks" | dmenu
     )"
   ) | dmenu
 )" 

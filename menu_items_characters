@@ -1,5 +1,6 @@
 #!/usr/bin/env sh
 set -e
+dir=$(cd -P -- "$(dirname -- "$0")" && pwd -P)
 
 path_file_unicodedata="/usr/share/unicode/UnicodeData.txt"
 
@@ -10,14 +11,16 @@ char_code_end="$2"
 
 file_unicodedata=$(<"$path_file_unicodedata")
 
+codes="$(cut -d ";" -f "1" <<< "$file_unicodedata")"
+
 [ "$char_code_begin" ] && { 
-  line_number_begin_block="$(grep --line-number "^$char_code_begin;" <<< "$file_unicodedata" | cut -d ":" -f 1)"
-  [ ! "$line_number_begin_block" ] && { echo "$(basename "$0"): Beginning of range character entry not found"; exit 1; }
+  code_begin="$($dir/closest_int_hex -s <(echo "$codes") -t "$1" -d "p")"
+  line_number_begin_block="$(grep --line-number "^$code_begin;" <<< "$file_unicodedata" | cut -d ":" -f 1)"
 }
 
 [ "$char_code_end" ] && {
-  line_number_end_block="$(grep --line-number "^$char_code_end;" <<< "$file_unicodedata" | cut -d ":" -f 1)"
-  [ ! "$line_number_end_block" ] && { echo "$(basename "$0"): End of range character entry not found"; exit 1; }
+  code_end="$($dir/closest_int_hex -s <(echo "$codes") -t "$2" -d "n")"
+  line_number_end_block="$(grep --line-number "^$code_end;" <<< "$file_unicodedata" | cut -d ":" -f 1)"
 }
 
 { 
@@ -30,8 +33,6 @@ file_unicodedata=$(<"$path_file_unicodedata")
   )"
 } || unicodedata="$(printf "%s" "$file_unicodedata" | cut -d ";" -f "1,2,11")"
 
-
-codes="$(cut -d ";" -f "1" <<< "$unicodedata")"
 
 names="$(
   cut -d ";" -f "2,3" <<< "$unicodedata" | sed -e 's/;$//g' | sed -e 's/;/ | /g' | sed -e 's/$/ ]/g' | sed -e 's/^/[ /g' | sed -e 's/<//g' | sed -e 's/>//g'
