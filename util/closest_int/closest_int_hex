@@ -132,14 +132,14 @@ print_state() {
   [ ! "$debug" ] && return
 
   state="Iteration:${itr}
-Target:${tgt}
+Target:${tgt} / ${tgt_orig}
 Direction:${dir}
 Space:$(echo ${space})
 Length of the space:${len}
 Index of the middle:${idx_mid}
-Middle:${mid}
-Minimum:${min}
-Maximum:${max}"
+Middle:${mid} / ${mid_orig}
+Minimum:${min} / ${min_orig}
+Maximum:${max} / ${max_orig}"
 
   column -t -s ':' -W 2 <<< "$state"
   echo
