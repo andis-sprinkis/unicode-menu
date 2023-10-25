@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+set -e
+
+printf "%s" "$@" | sed -n "s/^\[ \(.*.\) \] -.*$/\1/p" | sed -n "s/\.\./ /p"

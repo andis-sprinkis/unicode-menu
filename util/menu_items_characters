@@ -1,0 +1,54 @@
+#!/usr/bin/env sh
+set -e
+
+path_file_unicodedata="/usr/share/unicode/UnicodeData.txt"
+
+[ -r "$path_file_unicodedata" ] || { echo "$(basename "$0"): This script requires the UnicodeData.txt file from the package unicode-character-database"; exit 1; }
+
+char_code_begin="$1"
+char_code_end="$2"
+
+file_unicodedata=$(<"$path_file_unicodedata")
+
+[ "$char_code_begin" ] && { 
+  line_number_begin_block="$(grep --line-number "^$char_code_begin;" <<< "$file_unicodedata" | cut -d ":" -f 1)"
+  [ ! "$line_number_begin_block" ] && { echo "$(basename "$0"): Beginning of range character entry not found"; exit 1; }
+}
+
+[ "$char_code_end" ] && {
+  line_number_end_block="$(grep --line-number "^$char_code_end;" <<< "$file_unicodedata" | cut -d ":" -f 1)"
+  [ ! "$line_number_end_block" ] && { echo "$(basename "$0"): End of range character entry not found"; exit 1; }
+}
+
+{ 
+  [ "$line_number_begin_block" ] && [ "$line_number_end_block" ] && unicodedata="$(
+    printf "%s" "$file_unicodedata" | head -n "$line_number_end_block" | tail -n"+$line_number_begin_block" | cut -d ";" -f "1,2,11"
+  )"
+} || {
+  [ "$line_number_begin_block" ] && unicodedata="$(
+    printf "%s" "$file_unicodedata" | tail -n"+$line_number_begin_block" | cut -d ";" -f "1,2,11"
+  )"
+} || unicodedata="$(printf "%s" "$file_unicodedata" | cut -d ";" -f "1,2,11")"
+
+
+codes="$(cut -d ";" -f "1" <<< "$unicodedata")"
+
+names="$(
+  cut -d ";" -f "2,3" <<< "$unicodedata" | sed -e 's/;$//g' | sed -e 's/;/ | /g' | sed -e 's/$/ ]/g' | sed -e 's/^/[ /g' | sed -e 's/<//g' | sed -e 's/>//g'
+)"
+
+ifs_old=$IFS; IFS=$'\n'
+
+chars="$(
+  for code in $codes; do
+    [ "$code" = "0000" ] || [ "$code" = "000A" ] && { printf '%s\n' "[ N/A ] -"; continue; }
+    printf '[ %b ] -\n' "\\U$code"
+  done
+)"
+
+IFS=$ifs_old
+
+paste -d" " \
+  <(printf "%s" "$chars") \
+  <(printf "%s" "$codes" | sed -e 's/$/ ] -/g' | sed -e 's/^/[ /g') \
+  <(printf "%s" "$names")
