@@ -35,8 +35,7 @@ names="$(
     | sed -e 's/;/ | /g' \
     | sed -e 's/$/ ]/g' \
     | sed -e 's/^/[ /g' \
-    | sed -e 's/<//g' \
-    | sed -e 's/>//g'
+    | sed -e 's/<\|>//g' \
 )"
 
 chars="$(
@@ -44,7 +43,7 @@ chars="$(
 
   for code in $codes; do
     [ "$code" = "0000" ] || [ "$code" = "000A" ] && {
-      printf '%s\n' "[ N/A ] -"
+      echo "[ N/A ] -"
       continue
     }
 
