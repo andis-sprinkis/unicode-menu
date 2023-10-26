@@ -19,11 +19,11 @@ while getopts bh name; do
 done
 
 menu_item_block_to_range() {
-  printf "%s" "$1" | sed -n "s/^\[ \(.*.\) \] - \[ .*. \] - \[ .*. \]/\1/p"
+  printf "%s" "$@" | sed -n "s/^\[ \(.*.\) \] -.*$/\1/p" | sed -n "s/\.\./ /p"
 }
 
 menu_item_character_to_character() {
-  printf "%s" "$1" | sed -n "s/^\[ \(.*.\) \] - \[ .*. \] - \[ .*. \]/\1/p"
+  printf "%s" "$@" | sed -n "s/^\[ \(.*.\) \] - \[ .*. \] - \[ .*. \]/\1/p"
 }
 
 [ "$opt_b" ] && {
