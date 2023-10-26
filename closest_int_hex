@@ -156,11 +156,12 @@ not_found() {
   exit 1
 }
 
+len="$(wc -l <<< "$space")"
+
 while true; do
   # Set the iteration state
 
   itr="$(("$itr" + "1"))"
-  len="$(wc -l <<< "$space")"
 
   min_orig="$(head -n 1 <<< "$space")"
   min="$(hex_to_dec "$min_orig")"
@@ -199,8 +200,9 @@ while true; do
 
   # Shrink the search space by half
 
-  [ "$tgt" -gt "$mid" ] && space="$(tail -n "+$idx_mid" <<< "$space")" && continue
-  [ "$tgt" -lt "$mid" ] && space="$(head -n "$idx_mid" <<< "$space")" && continue
+  len="$idx_mid"
+  [ "$tgt" -gt "$mid" ] && { space="$(tail -n "+$idx_mid" <<< "$space")"; continue; }
+  [ "$tgt" -lt "$mid" ] && { space="$(head -n "$idx_mid" <<< "$space")"; continue; }
 
   print_state
 done

@@ -147,15 +147,18 @@ not_found() {
   exit 1
 }
 
+len="$(wc -l <<< "$space")"
+
 while true; do
   # Set the iteration state
 
-  len="$(wc -l <<< "$space")"
+  itr="$(("$itr" + "1"))"
+
   min="$(head -n 1 <<< "$space")"
   max="$(tail -n 1 <<< "$space")"
+
   idx_mid="$([ "$(("$len" % "2"))" -gt "0" ] && echo "$((("$len" / "2") + "1"))" || echo "$(("$len" / "2"))")"
   mid="$(echo "$space" | sed "$idx_mid!d")"
-  itr="$(("$itr" + "1"))"
 
   print_state
 
@@ -183,8 +186,9 @@ while true; do
 
   # Shrink the search space by half
 
-  [ "$tgt" -gt "$mid" ] && space="$(tail -n "+$idx_mid" <<< "$space")" && continue
-  [ "$tgt" -lt "$mid" ] && space="$(head -n "$idx_mid" <<< "$space")" && continue
+  len="$idx_mid"
+  [ "$tgt" -gt "$mid" ] && { space="$(tail -n "+$idx_mid" <<< "$space")"; continue; }
+  [ "$tgt" -lt "$mid" ] && { space="$(head -n "$idx_mid" <<< "$space")"; continue; }
 
   print_state
 done
