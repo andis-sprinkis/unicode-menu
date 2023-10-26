@@ -43,7 +43,7 @@ chars="$(
 
   for code in $codes; do
     [ "$code" = "0000" ] || [ "$code" = "000A" ] && {
-      echo "[ N/A ] -"
+      echo "[ ☠ ] -"
       continue
     }
 
