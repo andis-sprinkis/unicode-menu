@@ -45,14 +45,6 @@ done
 
 app_menu="${arg_opt_a:-fzf --preview-window=hidden}"
 
-menu_item_block_to_range() {
-  printf "%s" "$@" | sed -n "s/^\[ \(.*.\) \] -.*$/\1/p" | sed -n "s/\.\./ /p"
-}
-
-menu_item_character_to_character() {
-  printf "%s" "$@" | sed -n "s/^\[ \(.*.\) \] - \[ .*. \] - \[ .*. \]/\1/p"
-}
-
 [ "$opt_b" ] && {
   file_unicodeblocks="$(<"$path_file_unicodeblocks")"
   idx_begin_blocks="$(grep "^0000..007F" --line-number <<< $file_unicodeblocks | cut -d ":" -f 1)"
@@ -63,7 +55,8 @@ menu_item_character_to_character() {
   )"
 
   menu_item_block="$(echo "$unicodeblocks" | sed -e 's/^/[ /g' | sed -e 's/; / ] - [ /g' | sed -e 's/$/ ]/g' | $app_menu)"
-  range="$(menu_item_block_to_range "$menu_item_block")"
+
+  range="$(printf "%s" "$menu_item_block" | sed -n "s/^\[ \(.*.\) \] -.*$/\1/p" | sed -n "s/\.\./ /p")"
 
   code_tgt_begin="$(cut -d " " -f 1 <<< "$range")"
   code_tgt_end="$(cut -d " " -f 2 <<< "$range")"
@@ -118,4 +111,4 @@ menu_item_character="$(
   | $app_menu
 )"
 
-menu_item_character_to_character "$menu_item_character"
+printf "%s" "$menu_item_character" | sed -n "s/^\[ \(.*.\) \] - \[ .*. \] - \[ .*. \]/\1/p"
