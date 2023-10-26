@@ -30,9 +30,9 @@ while getopts a:bcnph name; do
        ;;
     c) opt_c=1 # write to clipboard
        ;;
-    p) opt_p=1 # paste from clipboard. external handler ?
+    p) opt_i=1 # paste from clipboard. external handler ?
        ;;
-    n) opt_p=1 # to not print the selected char to console
+    n) opt_n=1 # to not print the selected char to console
        ;;
     h) echo "$help_info"
        exit
