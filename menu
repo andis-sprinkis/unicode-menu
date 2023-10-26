@@ -15,11 +15,13 @@ path_file_unicodedata="/usr/share/unicode/UnicodeData.txt"
   exit 1
 }
 
-help_info="hello"
-
+opt_a=
 opt_b=
-while getopts bh name; do
+while getopts a:bh name; do
   case $name in
+    a) opt_a=1
+       arg_opt_a="$OPTARG"
+       ;;
     b) opt_b=1
        ;;
     h) echo "$help_info"
@@ -30,6 +32,8 @@ while getopts bh name; do
        ;;
   esac
 done
+
+app_menu="${arg_opt_a:-fzf --preview-window=hidden}"
 
 menu_item_block_to_range() {
   printf "%s" "$@" | sed -n "s/^\[ \(.*.\) \] -.*$/\1/p" | sed -n "s/\.\./ /p"
@@ -48,10 +52,10 @@ menu_item_character_to_character() {
     printf "%s" "$file_unicodeblocks" | head -n "$line_number_end_blocks" | tail -n"+$line_number_begin_blocks"
   )"
 
-  menu_item_block="$(echo "$unicodeblocks" | sed -e 's/^/[ /g' | sed -e 's/; / ] - [ /g' | sed -e 's/$/ ]/g' | dmenu)"
+  menu_item_block="$(echo "$unicodeblocks" | sed -e 's/^/[ /g' | sed -e 's/; / ] - [ /g' | sed -e 's/$/ ]/g' | $app_menu)"
   range="$(menu_item_block_to_range "$menu_item_block")"
 }
 
-menu_item_character="$("${dir}/menu_items_characters" $range | dmenu)"
+menu_item_character="$("${dir}/menu_items_characters" $range | $app_menu)"
 
 menu_item_character_to_character "$menu_item_character"
