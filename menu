@@ -2,6 +2,19 @@
 set -e
 dir=$(cd -P -- "$(dirname -- "$0")" && pwd -P)
 
+path_file_unicodeblocks="/usr/share/unicode/Blocks.txt"
+path_file_unicodedata="/usr/share/unicode/UnicodeData.txt"
+
+[ -r "$path_file_unicodeblocks" ] || {
+  echo "$(basename "$0"): This script requires the Blocks.txt file from the package unicode-character-database"
+  exit 1
+}
+
+[ -r "$path_file_unicodedata" ] || {
+  echo "$(basename "$0"): This script requires the UnicodeData.txt file from the package unicode-character-database"
+  exit 1
+}
+
 help_info="hello"
 
 opt_b=
@@ -27,7 +40,15 @@ menu_item_character_to_character() {
 }
 
 [ "$opt_b" ] && {
-  menu_item_block="$("${dir}/menu_items_blocks" | dmenu)"
+  file_unicodeblocks="$(<"$path_file_unicodeblocks")"
+  line_number_begin_blocks="$(grep "^0000..007F" --line-number <<< $file_unicodeblocks | cut -d ":" -f 1)"
+  line_number_end_blocks="$(grep "^100000..10FFFF" --line-number <<< $file_unicodeblocks | cut -d ":" -f 1)"
+
+  unicodeblocks="$(
+    printf "%s" "$file_unicodeblocks" | head -n "$line_number_end_blocks" | tail -n"+$line_number_begin_blocks"
+  )"
+
+  menu_item_block="$(echo "$unicodeblocks" | sed -e 's/^/[ /g' | sed -e 's/; / ] - [ /g' | sed -e 's/$/ ]/g' | dmenu)"
   range="$(menu_item_block_to_range "$menu_item_block")"
 }
 
