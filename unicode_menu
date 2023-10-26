@@ -21,18 +21,12 @@ opt_c=
 opt_n=
 opt_p=
 opt_h=
-while getopts a:bcnph name; do
+while getopts a:bh name; do
   case $name in
     a) opt_a=1
        arg_opt_a="$OPTARG"
        ;;
     b) opt_b=1
-       ;;
-    c) opt_c=1 # write to clipboard
-       ;;
-    p) opt_i=1 # paste from clipboard. external handler ?
-       ;;
-    n) opt_n=1 # to not print the selected char to console
        ;;
     h) echo "$help_info"
        exit
