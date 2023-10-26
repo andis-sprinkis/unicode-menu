@@ -1,0 +1,36 @@
+#!/usr/bin/env sh
+set -e
+dir=$(cd -P -- "$(dirname -- "$0")" && pwd -P)
+
+help_info="hello"
+
+opt_b=
+while getopts bh name; do
+  case $name in
+    b) opt_b=1
+       ;;
+    h) echo "$help_info"
+       exit
+      ;;
+    ?) echo "$help_info"
+       exit 2
+       ;;
+  esac
+done
+
+menu_item_block_to_range() {
+  printf "%s" "$1" | sed -n "s/^\[ \(.*.\) \] - \[ .*. \] - \[ .*. \]/\1/p"
+}
+
+menu_item_character_to_character() {
+  printf "%s" "$1" | sed -n "s/^\[ \(.*.\) \] - \[ .*. \] - \[ .*. \]/\1/p"
+}
+
+[ "$opt_b" ] && {
+  menu_item_block="$("${dir}/menu_items_blocks" | dmenu)"
+  range="$(menu_item_block_to_range "$menu_item_block")"
+}
+
+menu_item_character="$("${dir}/menu_items_characters" $range | dmenu)"
+
+menu_item_character_to_character "$menu_item_character"

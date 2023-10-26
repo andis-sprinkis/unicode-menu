@@ -1,7 +1,0 @@
-#!/usr/bin/env sh
-set -e
-dir=$(cd -P -- "$(dirname -- "$0")" && pwd -P)
-
-"${dir}/menu_item_character_to_character" "$(
-  "${dir}/menu_items_characters" | dmenu
-)"
