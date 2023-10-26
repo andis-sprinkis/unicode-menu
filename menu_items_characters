@@ -12,8 +12,7 @@ path_file_unicodedata="/usr/share/unicode/UnicodeData.txt"
 code_tgt_begin="$1"
 code_tgt_end="$2"
 
-file_unicodedata=$(<"$path_file_unicodedata")
-
+file_unicodedata=$(cut -d ";" -f "1,2,11" --output-delimiter ";" "$path_file_unicodedata")
 all_codes="$(cut -d ";" -f "1" <<< "$file_unicodedata")"
 
 [ "$code_tgt_begin" ] && [ "$code_tgt_end" ] && {
@@ -23,26 +22,35 @@ all_codes="$(cut -d ";" -f "1" <<< "$file_unicodedata")"
   idx_begin="$(grep --line-number "^$code_begin;" <<< "$file_unicodedata" | cut -d ":" -f 1)"
   idx_end="$(grep --line-number "^$code_end;" <<< "$file_unicodedata" | cut -d ":" -f 1)"
 
-  unicodedata="$(
-    echo "$file_unicodedata" | head -n "$idx_end" | tail -n"+$idx_begin" | cut -d ";" -f "1,2,11"
-  )" 
-
+  unicodedata="$(echo "$file_unicodedata" | head -n "$idx_end" | tail -n"+$idx_begin")" 
   codes="$(echo "$all_codes" | head -n "$idx_end" | tail -n"+$idx_begin")"
 } || {
-  unicodedata="$(echo "$file_unicodedata" | cut -d ";" -f "1,2,11")"
+  unicodedata="$file_unicodedata"
   codes="$all_codes"
 }
 
 names="$(
-  cut -d ";" -f "2,3" <<< "$unicodedata" | sed -e 's/;$//g' | sed -e 's/;/ | /g' | sed -e 's/$/ ]/g' | sed -e 's/^/[ /g' | sed -e 's/<//g' | sed -e 's/>//g'
+  cut -d ";" -f "2,3" <<< "$unicodedata" \
+    | sed -e 's/;$//g' \
+    | sed -e 's/;/ | /g' \
+    | sed -e 's/$/ ]/g' \
+    | sed -e 's/^/[ /g' \
+    | sed -e 's/<//g' \
+    | sed -e 's/>//g'
 )"
 
 chars="$(
   ifs_old=$IFS; IFS=$'\n'
+
   for code in $codes; do
-    [ "$code" = "0000" ] || [ "$code" = "000A" ] && { printf '%s\n' "[ N/A ] -"; continue; }
+    [ "$code" = "0000" ] || [ "$code" = "000A" ] && {
+      printf '%s\n' "[ N/A ] -"
+      continue
+    }
+
     printf '[ %b ] -\n' "\\U$code"
   done
+
   IFS=$ifs_old
 )"
 
