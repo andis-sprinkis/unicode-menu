@@ -48,7 +48,7 @@ app_menu="${arg_opt_a:-fzf --preview-window=hidden}"
     printf "%s" "$file_unicodeblocks" | head -n "$idx_end_blocks" | tail -n"+$idx_begin_blocks"
   )"
 
-  menu_item_block="$(echo "$unicodeblocks" | sed -e 's/^/[ /g' | sed -e 's/; / ] - [ /g' | sed -e 's/$/ ]/g' | $app_menu)"
+  menu_item_block="$(echo "$unicodeblocks" | sed -e 's/^/[ /g' -e 's/; / ] - [ /g' -e 's/$/ ]/g' | $app_menu)"
 
   range="$(printf "%s" "$menu_item_block" | sed -n "s/^\[ \(.*.\) \] -.*$/\1/p" | sed -n "s/\.\./ /p")"
 
@@ -74,12 +74,7 @@ all_codes="$(cut -d ";" -f "1" <<< "$file_unicodedata")"
 }
 
 names="$(
-  cut -d ";" -f "2,3" <<< "$unicodedata" \
-  | sed -e 's/;$//g' \
-  | sed -e 's/;/ | /g' \
-  | sed -e 's/$/ ]/g' \
-  | sed -e 's/^/[ /g' \
-  | sed -e 's/<\|>//g' \
+  cut -d ";" -f "2,3" <<< "$unicodedata" | sed -e 's/;$//g' -e 's/;/ | /g' -e 's/$/ ]/g' -e 's/^/[ /g' -e 's/<\|>//g'
 )"
 
 chars="$(
@@ -100,7 +95,7 @@ chars="$(
 menu_item_character="$(
   paste -d" " \
     <(echo "$chars") \
-    <(echo "$codes" | sed -e 's/$/ ] -/g' | sed -e 's/^/[ /g') \
+    <(echo "$codes" | sed -e 's/$/ ] -/g' -e 's/^/[ /g') \
     <(echo "$names") \
   | $app_menu
 )"
