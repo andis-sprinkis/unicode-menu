@@ -1,0 +1,23 @@
+#!/usr/bin/env sh
+set -e
+dir=$(cd -P -- "$(dirname -- "$0")" && pwd -P)
+
+path_file_unicodedata="/usr/share/unicode/UnicodeData.txt"
+
+[ -r "$path_file_unicodedata" ] || {
+  echo "$(basename "$0"): This script requires the UnicodeData.txt file from the package unicode-character-database"
+  exit 1
+}
+
+read input
+
+codes_input="$(echo "$input" | iconv -f "utf8" -t "utf32le" | hexdump -e '"%0X\n"')"
+
+unicodedata="$(< "$path_file_unicodedata")"
+codes_unicodedata="$(cut -d ";" -f 1 <<< "$unicodedata")"
+
+for code in $codes_input; do
+  code_unicodedata="$($dir/closest_int -b "hex" -t "$code" -s <(echo "$codes_unicodedata"))"
+
+  grep "^$code_unicodedata;" <<< "$unicodedata"
+done

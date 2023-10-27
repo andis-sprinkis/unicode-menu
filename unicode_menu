@@ -56,7 +56,7 @@ app_menu="${arg_opt_a:-fzf --preview-window=hidden}"
   code_tgt_end="$(cut -d " " -f 2 <<< "$range")"
 }
 
-file_unicodedata=$(cut -d ";" -f "1,2,11" --output-delimiter ";" "$path_file_unicodedata")
+file_unicodedata="$(cut -d ";" -f "1,2,11" --output-delimiter ";" "$path_file_unicodedata")"
 all_codes="$(cut -d ";" -f "1" <<< "$file_unicodedata")"
 
 [ "$code_tgt_begin" ] && [ "$code_tgt_end" ] && {
