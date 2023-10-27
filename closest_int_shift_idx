@@ -1,0 +1,234 @@
+#!/usr/bin/env sh
+set -e
+
+help_info="NAME
+    $(basename "$0") - Find the closest integer to target in the positive or the negative direction.
+
+SYNOPSIS
+    $(basename "$0") -t INTEGER [-d DIRECTION] [-b BASE] -s FILE [-g]
+
+DESCRIPTION
+    In FILE containing a list of integers, searches for the closest integer to the target INTEGER in the positive (p) or the negative (n) direction.
+
+    If exact number exists in given space - prints it as the result.
+
+    If exact number does not exist in given space - prints a positive or negative direction closest entry to the target as the result.
+
+    If no suitable number is found prints the error message and exits with code 1.
+
+    -t INTEGER 
+        Target number - an INTEGER.
+
+    -s FILE
+        FILE containing the search space.
+
+        File contents - a linebreak delimited, sorted, min-to-max directional list of non-repeating, negative signed integers.
+
+        For example:
+        -100
+        4
+        5
+        9
+        45
+
+        or
+
+        -E01EF
+        0000
+        0001
+        0007
+        00AB
+        E01EF
+        10FFFD
+
+    -d DIRECTION
+        Search direction.
+
+        Positive - p (default)
+        Negative - n
+
+    -b BASE
+        The numerical base for the target and seach space.
+
+        Decimal - dec (default)
+        Hexadecimal - hex
+
+    -g
+        Prints debug information during the search.
+
+    -h
+        Prints this message.
+"
+
+hex_to_dec() {
+  sign_n="$(cut -c1 <<< "$1")"
+
+  [ "$sign_n" = "-" ] && {
+    printf '%d' "${sign_n}0x$(echo "$1" | cut -c2-)"
+    return
+  }
+
+  printf '%d' "0x$1";
+}
+
+opt_b=
+opt_d=
+opt_g=
+opt_h=
+opt_s=
+opt_t=
+while getopts b:d:s:t:gh name; do
+  case $name in
+    b) opd_b=1
+       arg_opt_b="$OPTARG"
+       ;;
+    d) opt_d=1
+       arg_opt_d="$OPTARG"
+       ;;
+    s) opt_s=1
+       arg_opt_s="$OPTARG"
+       ;;
+    t) opt_t=1
+       arg_opt_t="$OPTARG"
+       ;;
+    g) opt_g=1
+       ;;
+    h) echo "$help_info"
+       exit
+      ;;
+    ?) echo "$help_info"
+       exit 2
+       ;;
+  esac
+done
+
+# Option -g
+
+debug="$opt_g"
+
+# Option -b
+
+[ "$arg_opt_b" ] && [ ! "$arg_opt_b" = "dec" ] && [ ! "$arg_opt_b" = "hex" ] && {
+  echo "$(basename $0): The BASE argument for option -b is not valid. It must be either 'dec' or 'hex'."
+  exit 2
+}
+
+base="${arg_opt_b:-dec}"
+
+# Option -t
+
+[ ! "$opt_t" ] && {
+  echo "$(basename $0): Required option missing - -t NUMBER"
+  exit 2
+}
+
+tgt_orig="$arg_opt_t"
+[ "$base" = "dec" ] && tgt="$tgt_orig"
+[ "$base" = "hex" ] && tgt="$(hex_to_dec "$tgt_orig")"
+
+# Option -s
+
+[ ! "$opt_s" ] && {
+  echo "$(basename $0): Required option missing - -s FILE"
+  exit 2
+}
+
+[ ! -e "$arg_opt_s" ] && {
+  echo "$(basename $0): The file path given in search space argument FILE for option -s doesn't point to an existing file."
+  exit 2
+}
+
+space="$(<"$arg_opt_s")"
+
+# Option -d
+
+[ "$arg_opt_d" ] && [ ! "$arg_opt_d" = "p" ] && [ ! "$arg_opt_d" = "n" ] && {
+  echo "$(basename $0): The DIRECTION argument for option -d is not valid. It must be either 'p' or 'n'."
+  exit 2
+}
+
+dir="${arg_opt_d:-"p"}"
+
+# Binary search
+
+print_state() {
+  [ ! "$debug" ] && return
+
+  state="Iteration:${itr}
+Target:${tgt} / ${tgt_orig}
+Direction:${dir}
+Space:$(echo ${space})
+Length of the space:${len}
+Index of the middle:${idx_mid}
+Middle:${mid} / ${mid_orig}
+Minimum:${min} / ${min_orig}
+Maximum:${max} / ${max_orig}"
+
+  column -t -s ':' -W 2 <<< "$state"
+  echo
+}
+
+found() {
+  print_state
+  echo "$1"
+  exit
+}
+
+not_found() {
+  echo "$(basename $0): No search space number in the given direction from the target number."
+  exit 1
+}
+
+len="$(wc -l <<< "$space")"
+
+while true; do
+  # Set the iteration state
+
+  itr="$(("$itr" + "1"))"
+
+  min_orig="$(head -n 1 <<< "$space")"
+  [ "$base" = "dec" ] && min="$min_orig"
+  [ "$base" = "hex" ] && min="$(hex_to_dec "$min_orig")"
+
+  max_orig="$(tail -n 1 <<< "$space")"
+  [ "$base" = "dec" ] && max="$max_orig"
+  [ "$base" = "hex" ] && max="$(hex_to_dec "$max_orig")"
+
+  idx_mid="$([ "$(("$len" % "2"))" -gt "0" ] && echo "$((("$len" / "2") + "1"))" || echo "$(("$len" / "2"))")"
+
+  mid_orig="$(echo "$space" | sed "$idx_mid!d")"
+  [ "$base" = "dec" ] && mid="$mid_orig"
+  [ "$base" = "hex" ] && mid="$(hex_to_dec "$mid_orig")"
+
+  print_state
+
+  # Check the target
+
+  [ "$tgt" = "$mid" ] && found "$mid_orig"
+  [ "$tgt" = "$min" ] && found "$min_orig"
+  [ "$tgt" = "$max" ] && found "$max_orig"
+
+  [ "$dir" = "p" ] && [ "$tgt" -gt "$max" ] && not_found
+  [ "$dir" = "n" ] && [ "$tgt" -lt "$min" ] && not_found
+
+  [ "$len" = "1" ] && {
+    [ "$dir" = "p" ] && [ "$tgt" -gt "$mid" ] && not_found
+    [ "$dir" = "n" ] && [ "$tgt" -lt "$mid" ] && not_found
+    found "$mid"
+  }
+
+  [ "$len" = "2" ] && {
+    [ "$dir" = "p" ] && [ "$tgt" -lt "$min" ] && found "$min"
+    [ "$dir" = "n" ] && [ "$tgt" -gt "$max" ] && found "$max"
+    [ "$dir" = "p" ] && found "$max_orig"
+    [ "$dir" = "n" ] && found "$min_orig"
+  }
+
+  # Shrink the search space by half
+
+  len="$idx_mid"
+  [ "$tgt" -gt "$mid" ] && { space="$(tail -n "+$idx_mid" <<< "$space")"; continue; }
+  [ "$tgt" -lt "$mid" ] && { space="$(head -n "$idx_mid" <<< "$space")"; continue; }
+
+  print_state
+done
