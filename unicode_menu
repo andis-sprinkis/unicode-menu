@@ -63,8 +63,8 @@ all_codes="$(cut -d ";" -f "1" <<< "$file_unicodedata")"
   code_begin="$($dir/closest_int -b "hex" -s <(echo "$all_codes") -t "$code_tgt_begin" -d "p")"
   code_end="$($dir/closest_int -b "hex" -s <(echo "$all_codes") -t "$code_tgt_end" -d "n")"
 
-  idx_begin="$(grep --line-number "^$code_begin;" <<< "$file_unicodedata" | cut -d ":" -f 1)"
-  idx_end="$(grep --line-number "^$code_end;" <<< "$file_unicodedata" | cut -d ":" -f 1)"
+  idx_begin="$(grep --line-number -Fx "$code_begin" <<< "$all_codes" | cut -d ":" -f 1)"
+  idx_end="$(grep --line-number -Fx "$code_end" <<< "$all_codes" | cut -d ":" -f 1)"
 
   unicodedata="$(echo "$file_unicodedata" | head -n "$idx_end" | tail -n"+$idx_begin")" 
   codes="$(echo "$all_codes" | head -n "$idx_end" | tail -n"+$idx_begin")"
