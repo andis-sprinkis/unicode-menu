@@ -5,7 +5,7 @@ help_info="NAME
     $(basename "$0") - Find the closest integer to target in the positive or the negative direction.
 
 SYNOPSIS
-    $(basename "$0") -t INTEGER [-d DIRECTION] [-b BASE] -s FILE [-g]
+    $(basename "$0") -t INTEGER -s FILE [-i] [-d DIRECTION] [-r DIRECTION] [-b BASE] [-g]
 
 DESCRIPTION
     In FILE containing a list of integers, searches for the closest integer to the target INTEGER in the positive (p) or the negative (n) direction.
@@ -47,6 +47,26 @@ DESCRIPTION
         Positive - p (default)
         Negative - n
 
+        e.g. for search space 1 2 4 5 and the target number 3
+        p - the result is 4 number at the index 3
+        n - the result is 2 number at the index 2
+
+    -r DIRECTION
+        Repeating value selection direction.
+
+        Negative - n (default)
+        Positive - p
+
+        e.g. for search space 1 3 3 3 5 and the target number 3
+        n - the result is number 3 at the index 2
+        p - the result is number 3 at the index 4
+
+    -i
+        Prints the result number index before the result value.
+
+        e.g.
+        The index is 1 and the number 22 - prints 1:22
+        The index is 81 and the number is -FFFF - prints 81:-FFFF
     -b BASE
         The numerical base for the target and seach space.
 
@@ -73,11 +93,13 @@ hex_to_dec() {
 
 opt_b=
 opt_d=
+opt_r=
 opt_g=
 opt_h=
+opt_i=
 opt_s=
 opt_t=
-while getopts b:d:s:t:gh name; do
+while getopts b:d:r:s:t:ghi name; do
   case $name in
     b) opd_b=1
        arg_opt_b="$OPTARG"
@@ -85,17 +107,22 @@ while getopts b:d:s:t:gh name; do
     d) opt_d=1
        arg_opt_d="$OPTARG"
        ;;
+    g) opt_g=1
+       ;;
+    h) echo "$help_info"
+       exit
+      ;;
+    i) opt_i=1
+       ;;
+    r) opt_r=1
+       arg_opt_r="$OPTARG"
+       ;;
     s) opt_s=1
        arg_opt_s="$OPTARG"
        ;;
     t) opt_t=1
        arg_opt_t="$OPTARG"
        ;;
-    g) opt_g=1
-       ;;
-    h) echo "$help_info"
-       exit
-      ;;
     ?) echo "$help_info"
        exit 2
        ;;
@@ -147,31 +174,57 @@ space="$(<"$arg_opt_s")"
   exit 2
 }
 
-dir="${arg_opt_d:-"p"}"
+dir_sch="${arg_opt_d:-"p"}"
+
+# Option -r
+
+[ "$arg_opt_r" ] && [ ! "$arg_opt_r" = "p" ] && [ ! "$arg_opt_r" = "n" ] && {
+  echo "$(basename $0): The DIRECTION argument for option -r is not valid. It must be either 'p' or 'n'."
+  exit 2
+}
+
+dir_rpt="${arg_opt_r:-"n"}"
+
+# Option -i
+
+print_idx="$opt_i"
 
 # Binary search
 
 print_state() {
   [ ! "$debug" ] && return
 
-  state="Iteration:${itr}
-Target:${tgt} / ${tgt_orig}
-Direction:${dir}
-Space:$(echo ${space})
-Length of the space:${len}
-Index of the middle:${idx_mid}
-Middle:${mid} / ${mid_orig}
-Minimum:${min} / ${min_orig}
-Maximum:${max} / ${max_orig}"
+  min="$(at "$idx_min")"
+  max="$(at "$idx_max")"
+  len="$(("$idx_max" - "$idx_min"))"
+
+  state="----:
+:
+Target value:${tgt}
+Search dir.:${dir_sch}
+Repeat. val. dir.:${dir_rpt}
+Search space leng.:${len}
+Middle index:${idx_mid}
+Middle value:${mid}
+Minimum index:${idx_min}
+Minimum value:${min}
+Maximum index:${idx_max}
+Maximum value:${max}
+Iteration:${itr}"
 
   column -t -s ':' -W 2 <<< "$state"
   echo
 }
 
+at() {
+  echo "$space" | sed "${1}!d"
+}
+
 found() {
   print_state
-  echo "$1"
-  exit
+
+  [ "$print_idx" ] && { echo "${1}:${2}"; exit; }
+  echo "$2"; exit
 }
 
 not_found() {
@@ -179,56 +232,30 @@ not_found() {
   exit 1
 }
 
-len="$(wc -l <<< "$space")"
+idx_min="1"
+idx_max="$(wc -l <<< "$space")"
 
-while true; do
-  # Set the iteration state
-
+while [ "$idx_min" -lt "$idx_max" ]; do
   itr="$(("$itr" + "1"))"
 
-  min_orig="$(head -n 1 <<< "$space")"
-  [ "$base" = "dec" ] && min="$min_orig"
-  [ "$base" = "hex" ] && min="$(hex_to_dec "$min_orig")"
+  idx_mid="$((("$idx_min" + "$idx_max") / "2"))"
 
-  max_orig="$(tail -n 1 <<< "$space")"
-  [ "$base" = "dec" ] && max="$max_orig"
-  [ "$base" = "hex" ] && max="$(hex_to_dec "$max_orig")"
-
-  idx_mid="$([ "$(("$len" % "2"))" -gt "0" ] && echo "$((("$len" / "2") + "1"))" || echo "$(("$len" / "2"))")"
-
-  mid_orig="$(echo "$space" | sed "$idx_mid!d")"
-  [ "$base" = "dec" ] && mid="$mid_orig"
-  [ "$base" = "hex" ] && mid="$(hex_to_dec "$mid_orig")"
+  mid="$(at "$idx_mid")"
 
   print_state
 
-  # Check the target
-
-  [ "$tgt" = "$mid" ] && found "$mid_orig"
-  [ "$tgt" = "$min" ] && found "$min_orig"
-  [ "$tgt" = "$max" ] && found "$max_orig"
-
-  [ "$dir" = "p" ] && [ "$tgt" -gt "$max" ] && not_found
-  [ "$dir" = "n" ] && [ "$tgt" -lt "$min" ] && not_found
-
-  [ "$len" = "1" ] && {
-    [ "$dir" = "p" ] && [ "$tgt" -gt "$mid" ] && not_found
-    [ "$dir" = "n" ] && [ "$tgt" -lt "$mid" ] && not_found
-    found "$mid"
+  { 
+    [ "$dir_rpt" = "n" ] && {
+      [ "$mid" -lt "$tgt" ] && idx_min="$(("$idx_mid" + "1"))" || idx_max="$idx_mid"
+    } 
+  } || {
+    [ "$dir_rpt" = "p" ] && {
+      [ "$mid" -gt "$tgt" ] && idx_max="$idx_mid" || idx_min="$(("$idx_mid" + "1"))"
+    }
   }
-
-  [ "$len" = "2" ] && {
-    [ "$dir" = "p" ] && [ "$tgt" -lt "$min" ] && found "$min"
-    [ "$dir" = "n" ] && [ "$tgt" -gt "$max" ] && found "$max"
-    [ "$dir" = "p" ] && found "$max_orig"
-    [ "$dir" = "n" ] && found "$min_orig"
-  }
-
-  # Shrink the search space by half
-
-  len="$idx_mid"
-  [ "$tgt" -gt "$mid" ] && { space="$(tail -n "+$idx_mid" <<< "$space")"; continue; }
-  [ "$tgt" -lt "$mid" ] && { space="$(head -n "$idx_mid" <<< "$space")"; continue; }
 
   print_state
 done
+
+[ "$dir_rpt" = "n" ] && found "$idx_min" "$(at "$idx_min")"
+[ "$dir_rpt" = "p" ] && found "$(("$idx_max" - "1"))" "$(at "$(("$idx_max" - "1"))")"
