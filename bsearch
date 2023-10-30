@@ -236,6 +236,7 @@ not_found() {
 }
 
 search_loop() {
+  itr="0"
   while [ "$idx_min" -lt "$idx_max" ]; do itr="$(("$itr" + "1"))"
     print_state
 
@@ -275,24 +276,51 @@ search_loop() {
 
 # 2. DONE - Largest number less than target (but rightmost of duplicates) (WORKS)
 # - SO: a = -1, b = n - 1, f(i) = (array[i+1] >= target)
-# idx_min="-1" idx_max="$(("$(space_len)" - "1"))"
-# f() { [ "$(at $(("$idx_mid" + "1")))" -ge "$tgt" ] && echo "1" || echo "0"; }
+[ "$eql" = "lt" ] && [ "$rpt" = "max" ] && {
+  idx_min="-1" idx_max="$(("$(space_len)" - "1"))"
+  f() { [ "$(at $(("$idx_mid" + "1")))" -ge "$tgt" ] && echo "1" || echo "0"; }
+  search_loop
+  found "$idx_min"
+}
+
+# 1. Largest number less than target (but leftmost of duplicates)
+# - a = -1, b = n - 1, f(i) = (array[i+1] >= target)
+# - a = 0, b = i, f(j) = array[j] == array[i]
+[ "$eql" = "lt" ] && [ "$rpt" = "min" ] && {
+  idx_min="-1" idx_max="$(("$(space_len)" - "1"))"
+  f() { [ "$(at $(("$idx_mid" + "1")))" -ge "$tgt" ] && echo "1" || echo "0"; }
+  search_loop
+  idx_res="$idx_min"
+  idx_min="0" idx_max="$idx_res"
+  f() { [ "$(at "$idx_mid")" -eq "$(at "$idx_res")" ] && echo "1" || echo "0"; }
+  search_loop
+  found "$idx_min"
+}
 
 # 4. DONE - Largest number less than or equal to target (but rightmost of duplicates)
 # - a = -1, b = n - 1, f(i) = (array[i+1] > target)
-# idx_min="-1" idx_max="$(("$(space_len)" - "1"))"
-# f() { [ "$(at $(("$idx_mid" + "1")))" -gt "$tgt" ] && echo "1" || echo "0"; }
+[ "$eql" = "le" ] && [ "$rpt" = "max" ] && {
+  idx_min="-1" idx_max="$(("$(space_len)" - "1"))"
+  f() { [ "$(at $(("$idx_mid" + "1")))" -gt "$tgt" ] && echo "1" || echo "0"; }
+  search_loop
+  found "$idx_min"
+}
 
 # 5. DONE - Smallest number greater than target (but leftmost of duplicates) (WORKS)
 # - a = 0, b = n, f(i) = array[i] > target
-# idx_min="0" idx_max="$(space_len)"
-# f() { [ "$(at "$idx_mid")" -gt "$tgt" ] && echo "1" || echo "0"; }
+[ "$eql" = "gt" ] && [ "$rpt" = "min" ] && {
+  idx_min="0" idx_max="$(space_len)"
+  f() { [ "$(at "$idx_mid")" -gt "$tgt" ] && echo "1" || echo "0"; }
+  search_loop
+  found "$idx_min"
+}
 
 # 7. DONE - Smallest number greater than or equal to target (but leftmost of duplicates) (WORKS)
 # - SO: a = 0, b = n, f(i) = array[i] >= target
-# idx_min="0" idx_max="$(space_len)"
-# f() { [ "$(at "$idx_mid")" -ge "$tgt" ] && echo "1" || echo "0"; }
+[ "$eql" = "ge" ] && [ "$rpt" = "min" ] && {
+  idx_min="0" idx_max="$(space_len)"
+  f() { [ "$(at "$idx_mid")" -ge "$tgt" ] && echo "1" || echo "0"; }
+  search_loop
+  found "$idx_min"
+}
 
-search_loop
-
-found "$idx_min"
