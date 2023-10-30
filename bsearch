@@ -1,11 +1,13 @@
 #!/usr/bin/env sh
 set -e
 
+script="$(basename "$0")"
+
 help_info="NAME
-    $(basename "$0") - Find the closest integer to target.
+    ${script} - Find the closest integer to target.
 
 SYNOPSIS
-    $(basename "$0") -t INTEGER -s FILE [-i] [-e EQUALITY] [-r SIZE] [-b BASE] [-g]
+    ${script} -t INTEGER -s FILE [-i] [-e EQUALITY] [-r SIZE] [-b BASE] [-g]
 
 DESCRIPTION
     In FILE containing a list of integers, searches for the closest integer to the target.
@@ -129,7 +131,7 @@ debug="$opt_g"
 # Option -b
 
 [ "$arg_opt_b" ] && [ ! "$arg_opt_b" = "dec" ] && [ ! "$arg_opt_b" = "hex" ] && {
-  echo "$(basename "$0"): The BASE argument for option -b is not valid. It must be either 'dec' or 'hex'."
+  echo "${script}: The BASE argument for option -b is not valid. It must be either 'dec' or 'hex'."
   exit 2
 }
 
@@ -138,7 +140,7 @@ base="${arg_opt_b:-dec}"
 # Option -t
 
 [ ! "$opt_t" ] && {
-  echo "$(basename "$0"): Required option missing - -t NUMBER"
+  echo "${script}: Required option missing - -t NUMBER"
   exit 2
 }
 
@@ -149,12 +151,12 @@ tgt_orig="$arg_opt_t"
 # Option -s
 
 [ ! "$opt_s" ] && {
-  echo "$(basename "$0"): Required option missing - -s FILE"
+  echo "${script}: Required option missing - -s FILE"
   exit 2
 }
 
 [ ! -e "$arg_opt_s" ] && {
-  echo "$(basename "$0"): The file path given in search space argument FILE for option -s doesn't point to an existing file."
+  echo "${script}: The file path given in search space argument FILE for option -s doesn't point to an existing file."
   exit 2
 }
 
@@ -164,7 +166,7 @@ len_space="$(wc -l <<< "$space")"
 # Option -e
 
 [ "$arg_opt_e" ] && [ ! "$arg_opt_e" = "lt" ] && [ ! "$arg_opt_e" = "le" ] && [ ! "$arg_opt_e" = "e" ] && [ ! "$arg_opt_e" = "ge" ] && [ ! "$arg_opt_e" = "gt" ] && {
-  echo "$(basename "$0"): The EQUALITY argument for option -e is not valid."
+  echo "${script}: The EQUALITY argument for option -e is not valid."
   exit 2
 }
 
@@ -173,7 +175,7 @@ eql="${arg_opt_e:-"le"}"
 # Option -r
 
 [ "$arg_opt_r" ] && [ ! "$arg_opt_r" = "min" ] && [ ! "$arg_opt_r" = "max" ] && {
-  echo "$(basename "$0"): The SIZE argument for option -r is not valid."
+  echo "${script}: The SIZE argument for option -r is not valid."
   exit 2
 }
 
@@ -224,7 +226,7 @@ found() {
 }
 
 not_found() {
-  echo "$(basename "$0"): No search space number in the given direction from the target number."
+  echo "${script}: No search space number in the given direction from the target number."
   exit 1
 }
 
