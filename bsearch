@@ -165,6 +165,7 @@ tgt_orig="$arg_opt_t"
 }
 
 space="$(<"$arg_opt_s")"
+len_space="$(wc -l <<< "$space")"
 
 # Option -e
 
@@ -220,10 +221,6 @@ at() {
   echo "$space" | sed "$(($1 + 1))!d" # +1 for 0-indexed idx conversion to line num
 }
 
-space_len() {
-  wc -l <<< "$space"
-}
-
 found() {
   print_state
 
@@ -250,7 +247,7 @@ search_loop() {
   done
 }
 [ "$eql" = "lt" ] && {
-  idx_min="-1" idx_max="$(("$(space_len)" - "1"))"
+  idx_min="-1" idx_max="$(("$len_space" - "1"))"
   f() { [ "$(at $(("$idx_mid" + "1")))" -ge "$tgt" ] && echo "1" || echo "0"; }
   search_loop
 
@@ -264,7 +261,7 @@ search_loop() {
 }
 
 [ "$eql" = "le" ] && {
-  idx_min="-1" idx_max="$(("$(space_len)" - "1"))"
+  idx_min="-1" idx_max="$(("$len_space" - "1"))"
   f() { [ "$(at $(("$idx_mid" + "1")))" -gt "$tgt" ] && echo "1" || echo "0"; }
   search_loop
 
@@ -277,44 +274,30 @@ search_loop() {
   found "$idx_min"
 }
 
-[ "$eql" = "gt" ] && [ "$rpt" = "min" ] && {
-  idx_min="0" idx_max="$(space_len)"
+[ "$eql" = "gt" ] && {
+  idx_min="0" idx_max="$len_space"
   f() { [ "$(at "$idx_mid")" -gt "$tgt" ] && echo "1" || echo "0"; }
   search_loop
 
-  found "$idx_min"
-}
-
-[ "$eql" = "gt" ] && [ "$rpt" = "max" ] && {
-  idx_min="0" idx_max="$(space_len)"
-  f() { [ "$(at "$idx_mid")" -gt "$tgt" ] && echo "1" || echo "0"; }
-  search_loop
-
-  idx_res="$idx_min"
-  idx_min="$(($idx_res - 1))" idx_max="$(("$(space_len)" - 1))"
-  f() { [ "$(at "$(("$idx_mid" + 1))")" -ne "$(at "$idx_res")" ] && echo "1" || echo "0"; }
-  search_loop
+  [ "$rpt" = "max" ] && {
+    idx_res="$idx_min" idx_min="$(($idx_res - 1))" idx_max="$(("$len_space" - 1))"
+    f() { [ "$(at "$(("$idx_mid" + 1))")" -ne "$(at "$idx_res")" ] && echo "1" || echo "0"; }
+    search_loop
+  }
 
   found "$idx_min"
 }
 
-[ "$eql" = "ge" ] && [ "$rpt" = "min" ] && {
-  idx_min="0" idx_max="$(space_len)"
+[ "$eql" = "ge" ] && {
+  idx_min="0" idx_max="$len_space"
   f() { [ "$(at "$idx_mid")" -ge "$tgt" ] && echo "1" || echo "0"; }
   search_loop
 
-  found "$idx_min"
-}
-
-[ "$eql" = "ge" ] && [ "$rpt" = "max" ] && {
-  idx_min="0" idx_max="$(space_len)"
-  f() { [ "$(at "$idx_mid")" -ge "$tgt" ] && echo "1" || echo "0"; }
-  search_loop
-
-  idx_res="$idx_min"
-  idx_min="$(($idx_res - 1))" idx_max="$(("$(space_len)" - 1))"
-  f() { [ "$(at "$(("$idx_mid" + 1))")" -ne "$(at "$idx_res")" ] && echo "1" || echo "0"; }
-  search_loop
+  [ "$rpt" = "max" ] && {
+    idx_res="$idx_min" idx_min="$(($idx_res - 1))" idx_max="$(("$len_space" - 1))"
+    f() { [ "$(at "$(("$idx_mid" + 1))")" -ne "$(at "$idx_res")" ] && echo "1" || echo "0"; }
+    search_loop
+  }
 
   found "$idx_min"
 }
