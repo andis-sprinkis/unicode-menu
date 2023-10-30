@@ -81,7 +81,7 @@ hex_to_dec() {
     return
   }
 
-  printf '%d' "0x$1";
+  printf '%d' "0x${1}";
 }
 
 opt_b=
