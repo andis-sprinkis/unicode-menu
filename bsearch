@@ -42,22 +42,23 @@ DESCRIPTION
         10FFFD
 
     -e EQUALITY
-        Target equality.
+        Target equality boundary.
 
+        Less than - lt
         Less than or equal - le (default)
-        Equal - e
+        Exact - e (TODO)
         Greater than - gt
         Greater than or equal - ge
 
-    -r SIZE
-        Repeating value selection direction.
+    -r DIRECTION
+        Repeated value boundary.
 
         Smallest - min (default)
-        Largest - max
+        Greatest - max
 
         e.g. for search space 1 3 3 3 5 and the target number 3
-        n - the result is number 3 at the index 1
-        p - the result is number 3 at the index 3
+        min - the result is number 3 at the index 1
+        max - the result is number 3 at the index 3
 
     -i
         Prints the result number index before the result value.
@@ -192,10 +193,10 @@ print_idx="$opt_i"
 print_state() {
   [ ! "$debug" ] && return
 
-  [ "$idx_min" -ge "0" ] && min="$(at "$idx_min")"
-  [ "$idx_max" -ge "0" ] && max="$(at "$idx_max")"
-  [ "$idx_mid" -ge "0" ] && mid="$(at "$idx_mid")"
-  len="$(("$idx_max" - "$idx_min"))"
+  [ "$idx_min" ] && [ "$idx_min" -ge "0" ] && min="$(at "$idx_min")"
+  [ "$idx_max" ] && [ "$idx_max" -ge "0" ] && max="$(at "$idx_max")"
+  [ "$idx_mid" ] && [ "$idx_mid" -ge "0" ] && mid="$(at "$idx_mid")"
+  [ "$idx_max" ] && [ "$idx_min" ] && len="$(("$idx_max" - "$idx_min"))"
 
   state=":
 ----:
@@ -249,78 +250,86 @@ search_loop() {
   done
 }
 
-# https://stackoverflow.com/questions/34091831/how-to-logically-interpret-any-variation-of-binary-search
-
-# 1 search
-#
-# SMALLEST LEFTMOST
-# 5. DONE - Smallest number greater than target (but leftmost of duplicates)
-# 7. DONE - Smallest number greater than or equal to target (but leftmost of duplicates)
-#
-# LARGEST RIGHTMOST
-# 2. DONE - Largest number less than target (but rightmost of duplicates)
-# 4. DONE - Largest number less than or equal to target (but rightmost of duplicates)
-#
-# (?) 2 searches
-#
-# SMALLEST RIGHTMOST
-# 6. Smallest number greater than target (but rightmost of duplicates)
-# 8. Smallest number greater than or equal to target (but rightmost of duplicates)
-#
-# LARGEST LEFTMOST
-# 1. Largest number less than target (but leftmost of duplicates)
-# 3. Largest number less than or equal to target (but leftmost of duplicates)
-
-
-# A
-
-# 2. DONE - Largest number less than target (but rightmost of duplicates) (WORKS)
-# - SO: a = -1, b = n - 1, f(i) = (array[i+1] >= target)
 [ "$eql" = "lt" ] && [ "$rpt" = "max" ] && {
   idx_min="-1" idx_max="$(("$(space_len)" - "1"))"
   f() { [ "$(at $(("$idx_mid" + "1")))" -ge "$tgt" ] && echo "1" || echo "0"; }
   search_loop
+
   found "$idx_min"
 }
 
-# 1. Largest number less than target (but leftmost of duplicates)
-# - a = -1, b = n - 1, f(i) = (array[i+1] >= target)
-# - a = 0, b = i, f(j) = array[j] == array[i]
 [ "$eql" = "lt" ] && [ "$rpt" = "min" ] && {
   idx_min="-1" idx_max="$(("$(space_len)" - "1"))"
   f() { [ "$(at $(("$idx_mid" + "1")))" -ge "$tgt" ] && echo "1" || echo "0"; }
   search_loop
+
   idx_res="$idx_min"
   idx_min="0" idx_max="$idx_res"
   f() { [ "$(at "$idx_mid")" -eq "$(at "$idx_res")" ] && echo "1" || echo "0"; }
   search_loop
+
   found "$idx_min"
 }
 
-# 4. DONE - Largest number less than or equal to target (but rightmost of duplicates)
-# - a = -1, b = n - 1, f(i) = (array[i+1] > target)
 [ "$eql" = "le" ] && [ "$rpt" = "max" ] && {
   idx_min="-1" idx_max="$(("$(space_len)" - "1"))"
   f() { [ "$(at $(("$idx_mid" + "1")))" -gt "$tgt" ] && echo "1" || echo "0"; }
   search_loop
+
   found "$idx_min"
 }
 
-# 5. DONE - Smallest number greater than target (but leftmost of duplicates) (WORKS)
-# - a = 0, b = n, f(i) = array[i] > target
+[ "$eql" = "le" ] && [ "$rpt" = "min" ] && {
+  idx_min="-1" idx_max="$(("$(space_len)" - "1"))"
+  f() { [ "$(at $(("$idx_mid" + "1")))" -gt "$tgt" ] && echo "1" || echo "0"; }
+  search_loop
+
+  idx_res="$idx_min"
+  idx_min="0" idx_max="$idx_res"
+  f() { [ "$(at "$idx_mid")" -eq "$(at "$idx_res")" ] && echo "1" || echo "0"; }
+  search_loop
+
+  found "$idx_min"
+}
+
 [ "$eql" = "gt" ] && [ "$rpt" = "min" ] && {
   idx_min="0" idx_max="$(space_len)"
   f() { [ "$(at "$idx_mid")" -gt "$tgt" ] && echo "1" || echo "0"; }
   search_loop
+
   found "$idx_min"
 }
 
-# 7. DONE - Smallest number greater than or equal to target (but leftmost of duplicates) (WORKS)
-# - SO: a = 0, b = n, f(i) = array[i] >= target
+[ "$eql" = "gt" ] && [ "$rpt" = "max" ] && {
+  idx_min="0" idx_max="$(space_len)"
+  f() { [ "$(at "$idx_mid")" -gt "$tgt" ] && echo "1" || echo "0"; }
+  search_loop
+
+  idx_res="$idx_min"
+  idx_min="$(($idx_res - 1))" idx_max="$(("$(space_len)" - 1))"
+  f() { [ "$(at "$(("$idx_mid" + 1))")" -ne "$(at "$idx_res")" ] && echo "1" || echo "0"; }
+  search_loop
+
+  found "$idx_min"
+}
+
 [ "$eql" = "ge" ] && [ "$rpt" = "min" ] && {
   idx_min="0" idx_max="$(space_len)"
   f() { [ "$(at "$idx_mid")" -ge "$tgt" ] && echo "1" || echo "0"; }
   search_loop
+
   found "$idx_min"
 }
 
+[ "$eql" = "ge" ] && [ "$rpt" = "max" ] && {
+  idx_min="0" idx_max="$(space_len)"
+  f() { [ "$(at "$idx_mid")" -ge "$tgt" ] && echo "1" || echo "0"; }
+  search_loop
+
+  idx_res="$idx_min"
+  idx_min="$(($idx_res - 1))" idx_max="$(("$(space_len)" - 1))"
+  f() { [ "$(at "$(("$idx_mid" + 1))")" -ne "$(at "$idx_res")" ] && echo "1" || echo "0"; }
+  search_loop
+
+  found "$idx_min"
+}
