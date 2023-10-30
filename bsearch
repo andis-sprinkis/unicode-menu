@@ -2,7 +2,7 @@
 set -e
 
 help_info="NAME
-    $(basename "$0") - Find the closest integer to target in the positive or the negative direction.
+    $(basename "$0") - Find the closest integer to target.
 
 SYNOPSIS
     $(basename "$0") -t INTEGER -s FILE [-i] [-e EQUALITY] [-r SIZE] [-b BASE] [-g]
