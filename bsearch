@@ -8,13 +8,7 @@ SYNOPSIS
     $(basename "$0") -t INTEGER -s FILE [-i] [-e EQUALITY] [-r SIZE] [-b BASE] [-g]
 
 DESCRIPTION
-    In FILE containing a list of integers, searches for the closest integer to the target INTEGER in the positive (p) or the negative (n) direction.
-
-    If exact number exists in given space - prints it as the result.
-
-    If exact number does not exist in given space - prints a positive or negative direction closest entry to the target as the result.
-
-    If no suitable number is found prints the error message and exits with code 1.
+    In FILE containing a list of integers, searches for the closest integer to the target.
 
     -t INTEGER 
         Target number - an INTEGER.
