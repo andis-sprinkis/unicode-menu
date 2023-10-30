@@ -199,8 +199,7 @@ print_state() {
   [ "$idx_mid" ] && [ "$idx_mid" -ge "0" ] && mid="$(at "$idx_mid")"
   [ "$idx_max" ] && [ "$idx_min" ] && len="$(("$idx_max" - "$idx_min"))"
 
-  state=":
-----:
+  state="----:
 :
 Target value:${tgt}
 Search equality:${eql}
@@ -212,7 +211,9 @@ Minimum index:${idx_min}
 Minimum value:${min}
 Maximum index:${idx_max}
 Maximum value:${max}
-Iteration:${itr}"
+Loop:${idx_loop}
+Iteration:${idx_itr}
+:"
 
   column -t -s ':' -W 2 <<< "$state"
 }
@@ -234,8 +235,8 @@ not_found() {
 }
 
 search_loop() {
-  itr="0"
-  while [ "$idx_min" -lt "$idx_max" ]; do itr="$(("$itr" + "1"))"
+  idx_loop="$(("$idx_loop" + 1))" idx_itr="0"
+  while [ "$idx_min" -lt "$idx_max" ]; do idx_itr="$(("$idx_itr" + "1"))"
     print_state
 
     idx_mid="$(("$idx_min" + ("$idx_max" - "$idx_min") / "2"))"
@@ -246,6 +247,7 @@ search_loop() {
     print_state
   done
 }
+
 [ "$eql" = "lt" ] && {
   idx_min="-1" idx_max="$(("$len_space" - "1"))"
   f() { [ "$(at $(("$idx_mid" + "1")))" -ge "$tgt" ] && echo "1" || echo "0"; }
@@ -256,8 +258,6 @@ search_loop() {
     f() { [ "$(at "$idx_mid")" -eq "$(at "$idx_res")" ] && echo "1" || echo "0"; }
     search_loop
   }
-
-  found
 }
 
 [ "$eql" = "le" ] && {
@@ -270,8 +270,6 @@ search_loop() {
     f() { [ "$(at "$idx_mid")" -eq "$(at "$idx_res")" ] && echo "1" || echo "0"; }
     search_loop
   }
-
-  found
 }
 
 [ "$eql" = "gt" ] && {
@@ -284,8 +282,6 @@ search_loop() {
     f() { [ "$(at "$(("$idx_mid" + 1))")" -ne "$(at "$idx_res")" ] && echo "1" || echo "0"; }
     search_loop
   }
-
-  found
 }
 
 [ "$eql" = "ge" ] && {
@@ -298,6 +294,6 @@ search_loop() {
     f() { [ "$(at "$(("$idx_mid" + 1))")" -ne "$(at "$idx_res")" ] && echo "1" || echo "0"; }
     search_loop
   }
-
-  found
 }
+
+found
