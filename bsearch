@@ -244,27 +244,26 @@ search_loop() {
 
 [ "$eql" = "lt" ] && {
   [ "$tgt" -le "$(at "0")" ] && not_found
-  idx_min="-1" idx_max="$(("$len_space" - "1"))"
   f() { [ "$(at $(("$idx_mid" + "1")))" -ge "$tgt" ] && echo "1" || echo "0"; }
 }
 
 [ "$eql" = "le" ] && {
   [ "$tgt" -lt "$(at "0")" ] && not_found
-  idx_min="-1" idx_max="$(("$len_space" - "1"))"
   f() { [ "$(at $(("$idx_mid" + "1")))" -gt "$tgt" ] && echo "1" || echo "0"; }
 }
 
 [ "$eql" = "gt" ] && {
   [ "$tgt" -ge "$(at "$(("$len_space" - "1"))")" ] && not_found
-  idx_min="0" idx_max="$len_space"
   f() { [ "$(at "$idx_mid")" -gt "$tgt" ] && echo "1" || echo "0"; }
 }
 
 [ "$eql" = "ge" ] && {
   [ "$tgt" -gt "$(at "$(("$len_space" - "1"))")" ] && not_found
-  idx_min="0" idx_max="$len_space"
   f() { [ "$(at "$idx_mid")" -ge "$tgt" ] && echo "1" || echo "0"; }
 }
+
+[ "$eql" = "lt" ] || [ "$eql" = "le" ] && idx_min="-1" idx_max="$(("$len_space" - "1"))"
+[ "$eql" = "gt" ] || [ "$eql" = "ge" ] && idx_min="0" idx_max="$len_space"
 
 search_loop
 
