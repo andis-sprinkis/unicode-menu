@@ -224,8 +224,8 @@ at() {
 found() {
   print_state
 
-  [ "$print_idx" ] && { echo "${1} $(at "$1")"; exit; }
-  echo "$(at "$1")"; exit
+  [ "$print_idx" ] && { echo "${idx_min} $(at "$idx_min")"; exit; }
+  echo "$(at "$idx_min")"; exit
 }
 
 not_found() {
@@ -257,7 +257,7 @@ search_loop() {
     search_loop
   }
 
-  found "$idx_min"
+  found
 }
 
 [ "$eql" = "le" ] && {
@@ -271,7 +271,7 @@ search_loop() {
     search_loop
   }
 
-  found "$idx_min"
+  found
 }
 
 [ "$eql" = "gt" ] && {
@@ -285,7 +285,7 @@ search_loop() {
     search_loop
   }
 
-  found "$idx_min"
+  found
 }
 
 [ "$eql" = "ge" ] && {
@@ -299,5 +299,5 @@ search_loop() {
     search_loop
   }
 
-  found "$idx_min"
+  found
 }
