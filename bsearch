@@ -250,58 +250,40 @@ search_loop() {
 
 [ "$eql" = "lt" ] && {
   [ "$tgt" -le "$(at "0")" ] && not_found
-
   idx_min="-1" idx_max="$(("$len_space" - "1"))"
   f() { [ "$(at $(("$idx_mid" + "1")))" -ge "$tgt" ] && echo "1" || echo "0"; }
-  search_loop
-
-  [ "$rpt" = "min" ] && {
-    idx_res="$idx_min" idx_min="0" idx_max="$idx_res"
-    f() { [ "$(at "$idx_mid")" -eq "$(at "$idx_res")" ] && echo "1" || echo "0"; }
-    search_loop
-  }
 }
 
 [ "$eql" = "le" ] && {
   [ "$tgt" -lt "$(at "0")" ] && not_found
-
   idx_min="-1" idx_max="$(("$len_space" - "1"))"
   f() { [ "$(at $(("$idx_mid" + "1")))" -gt "$tgt" ] && echo "1" || echo "0"; }
-  search_loop
-
-  [ "$rpt" = "min" ] && {
-    idx_res="$idx_min" idx_min="0" idx_max="$idx_res"
-    f() { [ "$(at "$idx_mid")" -eq "$(at "$idx_res")" ] && echo "1" || echo "0"; }
-    search_loop
-  }
 }
 
 [ "$eql" = "gt" ] && {
   [ "$tgt" -ge "$(at "$(("$len_space" - "1"))")" ] && not_found
-
   idx_min="0" idx_max="$len_space"
   f() { [ "$(at "$idx_mid")" -gt "$tgt" ] && echo "1" || echo "0"; }
-  search_loop
-
-  [ "$rpt" = "max" ] && {
-    idx_res="$idx_min" idx_min="$(("$idx_res" - "1"))" idx_max="$(("$len_space" - "1"))"
-    f() { [ "$(at "$(("$idx_mid" + "1"))")" -ne "$(at "$idx_res")" ] && echo "1" || echo "0"; }
-    search_loop
-  }
 }
 
 [ "$eql" = "ge" ] && {
   [ "$tgt" -gt "$(at "$(("$len_space" - "1"))")" ] && not_found
-
   idx_min="0" idx_max="$len_space"
   f() { [ "$(at "$idx_mid")" -ge "$tgt" ] && echo "1" || echo "0"; }
-  search_loop
+}
 
-  [ "$rpt" = "max" ] && {
+search_loop
+
+{ 
+  [ "$rpt" = "min" ] && { [ "$eql" = "lt" ] || [ "$eql" = "le" ]; } && {
+    idx_res="$idx_min" idx_min="0" idx_max="$idx_res"
+    f() { [ "$(at "$idx_mid")" -eq "$(at "$idx_res")" ] && echo "1" || echo "0"; }
+  } 
+} || {
+  [ "$rpt" = "max" ] && { [ "$eql" = "gt" ] || [ "$eql" = "ge" ]; } && {
     idx_res="$idx_min" idx_min="$(("$idx_res" - "1"))" idx_max="$(("$len_space" - "1"))"
     f() { [ "$(at "$(("$idx_mid" + "1"))")" -ne "$(at "$idx_res")" ] && echo "1" || echo "0"; }
-    search_loop
-  }
-}
+  } 
+} && search_loop
 
 found
