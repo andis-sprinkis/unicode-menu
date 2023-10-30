@@ -94,30 +94,30 @@ opt_s=
 opt_t=
 while getopts b:e:r:s:t:ghi name; do
   case $name in
-    b) opd_b=1
+    b) opd_b="1"
        arg_opt_b="$OPTARG"
        ;;
-    e) opt_d=1
+    e) opt_d="1"
        arg_opt_e="$OPTARG"
        ;;
-    g) opt_g=1
+    g) opt_g="1"
        ;;
     h) echo "$help_info"
        exit
       ;;
-    i) opt_i=1
+    i) opt_i="1"
        ;;
-    r) opt_r=1
+    r) opt_r="1"
        arg_opt_r="$OPTARG"
        ;;
-    s) opt_s=1
+    s) opt_s="1"
        arg_opt_s="$OPTARG"
        ;;
-    t) opt_t=1
+    t) opt_t="1"
        arg_opt_t="$OPTARG"
        ;;
     ?) echo "$help_info"
-       exit 2
+       exit "2"
        ;;
   esac
 done
