@@ -5,7 +5,7 @@ help_info="NAME
     $(basename "$0") - Find the closest integer to target in the positive or the negative direction.
 
 SYNOPSIS
-    $(basename "$0") -t INTEGER -s FILE [-i] [-d DIRECTION] [-r DIRECTION] [-b BASE] [-g]
+    $(basename "$0") -t INTEGER -s FILE [-i] [-e EQUALITY] [-r SIZE] [-b BASE] [-g]
 
 DESCRIPTION
     In FILE containing a list of integers, searches for the closest integer to the target INTEGER in the positive (p) or the negative (n) direction.
@@ -41,32 +41,30 @@ DESCRIPTION
         E01EF
         10FFFD
 
-    -d DIRECTION
-        Search direction.
+    -e EQUALITY
+        Target equality.
 
-        Positive - p (default)
-        Negative - n
+        Less than or equal - le (default)
+        Equal - e
+        Greater than - gt
+        Greater than or equal - ge
 
-        e.g. for search space 1 2 4 5 and the target number 3
-        p - the result is 4 number at the index 3
-        n - the result is 2 number at the index 2
-
-    -r DIRECTION
+    -r SIZE
         Repeating value selection direction.
 
-        Negative - n (default)
-        Positive - p
+        Smallest - min (default)
+        Largest - max
 
         e.g. for search space 1 3 3 3 5 and the target number 3
-        n - the result is number 3 at the index 2
-        p - the result is number 3 at the index 4
+        n - the result is number 3 at the index 1
+        p - the result is number 3 at the index 3
 
     -i
         Prints the result number index before the result value.
 
         e.g.
-        The index is 1 and the number 22 - prints 1:22
-        The index is 81 and the number is -FFFF - prints 81:-FFFF
+        The index is 0 and the number 22, it prints '0 22'
+        The index is 81 and the number is -FFFF, it prints '81 -FFFF'
     -b BASE
         The numerical base for the target and seach space.
 
@@ -92,20 +90,20 @@ hex_to_dec() {
 }
 
 opt_b=
-opt_d=
+opt_e=
 opt_r=
 opt_g=
 opt_h=
 opt_i=
 opt_s=
 opt_t=
-while getopts b:d:r:s:t:ghi name; do
+while getopts b:e:r:s:t:ghi name; do
   case $name in
     b) opd_b=1
        arg_opt_b="$OPTARG"
        ;;
-    d) opt_d=1
-       arg_opt_d="$OPTARG"
+    e) opt_d=1
+       arg_opt_e="$OPTARG"
        ;;
     g) opt_g=1
        ;;
@@ -167,23 +165,23 @@ tgt_orig="$arg_opt_t"
 
 space="$(<"$arg_opt_s")"
 
-# Option -d
+# Option -e
 
-[ "$arg_opt_d" ] && [ ! "$arg_opt_d" = "p" ] && [ ! "$arg_opt_d" = "n" ] && {
-  echo "$(basename $0): The DIRECTION argument for option -d is not valid. It must be either 'p' or 'n'."
+[ "$arg_opt_e" ] && [ ! "$arg_opt_e" = "lt" ] && [ ! "$arg_opt_e" = "le" ] && [ ! "$arg_opt_e" = "e" ] && [ ! "$arg_opt_e" = "ge" ] && [ ! "$arg_opt_e" = "gt" ] && {
+  echo "$(basename $0): The EQUALITY argument for option -e is not valid."
   exit 2
 }
 
-dir_sch="${arg_opt_d:-"p"}"
+eql="${arg_opt_e:-"le"}"
 
 # Option -r
 
-[ "$arg_opt_r" ] && [ ! "$arg_opt_r" = "p" ] && [ ! "$arg_opt_r" = "n" ] && {
-  echo "$(basename $0): The DIRECTION argument for option -r is not valid. It must be either 'p' or 'n'."
+[ "$arg_opt_r" ] && [ ! "$arg_opt_r" = "min" ] && [ ! "$arg_opt_r" = "max" ] && {
+  echo "$(basename $0): The SIZE argument for option -r is not valid."
   exit 2
 }
 
-dir_rpt="${arg_opt_r:-"n"}"
+rpt="${arg_opt_r:-"min"}"
 
 # Option -i
 
@@ -194,16 +192,18 @@ print_idx="$opt_i"
 print_state() {
   [ ! "$debug" ] && return
 
-  min="$(at "$idx_min")"
-  max="$(at "$idx_max")"
+  [ "$idx_min" -ge "0" ] && min="$(at "$idx_min")"
+  [ "$idx_max" -ge "0" ] && max="$(at "$idx_max")"
+  [ "$idx_mid" -ge "0" ] && mid="$(at "$idx_mid")"
   len="$(("$idx_max" - "$idx_min"))"
 
-  state="----:
+  state=":
+----:
 :
 Target value:${tgt}
-Search dir.:${dir_sch}
-Repeat. val. dir.:${dir_rpt}
-Search space leng.:${len}
+Search equality:${eql}
+Repetition bound.:${rpt}
+Search space len.:${len}
 Middle index:${idx_mid}
 Middle value:${mid}
 Minimum index:${idx_min}
@@ -213,18 +213,21 @@ Maximum value:${max}
 Iteration:${itr}"
 
   column -t -s ':' -W 2 <<< "$state"
-  echo
 }
 
 at() {
-  echo "$space" | sed "${1}!d"
+  echo "$space" | sed "$(($1 + 1))!d" # +1 for 0-indexed idx conversion to line num
+}
+
+space_len() {
+  wc -l <<< "$space"
 }
 
 found() {
   print_state
 
-  [ "$print_idx" ] && { echo "${1}:${2}"; exit; }
-  echo "$2"; exit
+  [ "$print_idx" ] && { echo "${1} $(at "$1")"; exit; }
+  echo "$(at "$1")"; exit
 }
 
 not_found() {
@@ -232,30 +235,64 @@ not_found() {
   exit 1
 }
 
-idx_min="1"
-idx_max="$(wc -l <<< "$space")"
+search_loop() {
+  while [ "$idx_min" -lt "$idx_max" ]; do itr="$(("$itr" + "1"))"
+    print_state
 
-while [ "$idx_min" -lt "$idx_max" ]; do
-  itr="$(("$itr" + "1"))"
+    idx_mid="$(("$idx_min" + ("$idx_max" - "$idx_min") / "2"))"
+    # 1 - remove right, move left
+    # 0 - remove left, move right
+    [ "$(f)" = "1" ] && idx_max="$idx_mid" || idx_min="$(("$idx_mid" + "1"))"
 
-  idx_mid="$((("$idx_min" + "$idx_max") / "2"))"
+    print_state
+  done
+}
 
-  mid="$(at "$idx_mid")"
+# https://stackoverflow.com/questions/34091831/how-to-logically-interpret-any-variation-of-binary-search
 
-  print_state
+# 1 search
+#
+# SMALLEST LEFTMOST
+# 5. DONE - Smallest number greater than target (but leftmost of duplicates)
+# 7. DONE - Smallest number greater than or equal to target (but leftmost of duplicates)
+#
+# LARGEST RIGHTMOST
+# 2. DONE - Largest number less than target (but rightmost of duplicates)
+# 4. DONE - Largest number less than or equal to target (but rightmost of duplicates)
+#
+# (?) 2 searches
+#
+# SMALLEST RIGHTMOST
+# 6. Smallest number greater than target (but rightmost of duplicates)
+# 8. Smallest number greater than or equal to target (but rightmost of duplicates)
+#
+# LARGEST LEFTMOST
+# 1. Largest number less than target (but leftmost of duplicates)
+# 3. Largest number less than or equal to target (but leftmost of duplicates)
 
-  { 
-    [ "$dir_rpt" = "n" ] && {
-      [ "$mid" -lt "$tgt" ] && idx_min="$(("$idx_mid" + "1"))" || idx_max="$idx_mid"
-    } 
-  } || {
-    [ "$dir_rpt" = "p" ] && {
-      [ "$mid" -gt "$tgt" ] && idx_max="$idx_mid" || idx_min="$(("$idx_mid" + "1"))"
-    }
-  }
 
-  print_state
-done
+# A
 
-[ "$dir_rpt" = "n" ] && found "$idx_min" "$(at "$idx_min")"
-[ "$dir_rpt" = "p" ] && found "$(("$idx_max" - "1"))" "$(at "$(("$idx_max" - "1"))")"
+# 2. DONE - Largest number less than target (but rightmost of duplicates) (WORKS)
+# - SO: a = -1, b = n - 1, f(i) = (array[i+1] >= target)
+# f() { [ "$(at $(("$idx_mid" + 1)))" -ge "$tgt" ] && echo "1" || echo "0"; }
+# idx_min="-1"; idx_max="$(("$(space_len)" - "1"))"
+
+# 4. DONE - Largest number less than or equal to target (but rightmost of duplicates)
+# - a = -1, b = n - 1, f(i) = (array[i+1] > target)
+# f() { [ "$(at $(("$idx_mid" + 1)))" -gt "$tgt" ] && echo "1" || echo "0"; }
+# idx_min="-1"; idx_max="$(("$(space_len)" - "1"))"
+
+# 5. DONE - Smallest number greater than target (but leftmost of duplicates) (WORKS)
+# - a = 0, b = n, f(i) = array[i] > target
+# f() { [ "$(at "$idx_mid")" -gt "$tgt" ] && echo "1" || echo "0"; }
+# idx_min="0"; idx_max="$(space_len)"
+
+# 7. DONE - Smallest number greater than or equal to target (but leftmost of duplicates) (WORKS)
+# - SO: a = 0, b = n, f(i) = array[i] >= target
+# f() { [ "$(at "$idx_mid")" -ge "$tgt" ] && echo "1" || echo "0"; }
+# idx_min="0"; idx_max="$(space_len)"
+
+search_loop
+
+found "$idx_min"
