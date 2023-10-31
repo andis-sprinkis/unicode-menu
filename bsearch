@@ -7,7 +7,7 @@ help_info="NAME
     ${script} - Find the closest integer to target.
 
 SYNOPSIS
-    ${script} -t INTEGER -s FILE [-i] [-e EQUALITY] [-r SIZE] [-b BASE] [-g]
+    ${script} -t INTEGER -s FILE [-i] [-e EQUALITY] [-r BOUNDARY] [-b BASE] [-g]
 
 DESCRIPTION
     In FILE containing a list of integers, searches for the closest integer to the target.
@@ -46,7 +46,7 @@ DESCRIPTION
         Greater than - gt
         Greater than or equal - ge
 
-    -r DIRECTION
+    -r BOUNDARY
         Repeated value boundary.
 
         Smallest - min (default)
@@ -203,23 +203,23 @@ print_idx="$opt_i"
 print_state() {
   [ ! "$debug" ] && return
 
-  [ "$idx_min" ] && [ "$idx_min" -ge "0" ] && min_orig="$(at "$idx_min")" min="$(dec "$min_orig")"
-  [ "$idx_max" ] && [ "$idx_max" -ge "0" ] && max_orig="$(at "$idx_max")" max="$(dec "$max_orig")"
-  [ "$idx_mid" ] && [ "$idx_mid" -ge "0" ] && mid_orig="$(at "$idx_mid")" mid="$(dec "$mid_orig")"
+  [ "$idx_min" ] && [ "$idx_min" -ge "0" ] && [ "$idx_min" -lt "$len_space" ] && min_orig="$(at "$idx_min")" min="$(dec "$min_orig")"
+  [ "$idx_max" ] && [ "$idx_max" -ge "0" ] && [ "$idx_max" -lt "$len_space" ] && max_orig="$(at "$idx_max")" max="$(dec "$max_orig")"
+  [ "$idx_mid" ] && [ "$idx_mid" -ge "0" ] && [ "$idx_mid" -lt "$len_space" ] && mid_orig="$(at "$idx_mid")" mid="$(dec "$mid_orig")"
   [ "$idx_max" ] && [ "$idx_min" ] && len="$(("$idx_max" - "$idx_min"))"
 
-  state="----:
+  state="-:-
 :
-Target value:${tgt_orig} (dec. ${tgt})
+Target value:${tgt_orig} / dec. ${tgt}
 Search equality:${eql}
 Repetition bound.:${rpt}
 Search space len.:${len}
 Middle index:${idx_mid}
-Middle value:${mid_orig} (dec. ${mid})
+Middle value:${mid_orig} / dec. ${mid}
 Minimum index:${idx_min}
-Minimum value:${min_orig} (dec. ${mid})
+Minimum value:${min_orig} / dec. ${mid}
 Maximum index:${idx_max}
-Maximum value:${max_orig} (dec. ${max})
+Maximum value:${max_orig} / dec. ${max}
 Loop:${idx_loop}
 Iteration:${idx_itr}
 :"
