@@ -60,11 +60,13 @@ file_unicodedata="$(cut -d ";" -f "1,2,11" --output-delimiter ";" "$path_file_un
 all_codes="$(cut -d ";" -f "1" <<< "$file_unicodedata")"
 
 [ "$code_tgt_begin" ] && [ "$code_tgt_end" ] && {
-  code_begin="$($dir/closest_int -b "hex" -s <(echo "$all_codes") -t "$code_tgt_begin" -d "p")"
-  code_end="$($dir/closest_int -b "hex" -s <(echo "$all_codes") -t "$code_tgt_end" -d "n")"
+  read -r "idx_begin" "code_begin" < <(
+    $dir/bsearch -s <(echo "$all_codes") -t "$code_tgt_begin" -i -b "hex" -e "ge" -r "min"
+  )
 
-  idx_begin="$(grep --line-number -Fx "$code_begin" <<< "$all_codes" | cut -d ":" -f 1)"
-  idx_end="$(grep --line-number -Fx "$code_end" <<< "$all_codes" | cut -d ":" -f 1)"
+  read -r "idx_end" "code_end" < <(
+    $dir/bsearch -s <(echo "$all_codes") -t "$code_tgt_end" -i -b "hex" -e "le" -r "max"
+  )
 
   unicodedata="$(echo "$file_unicodedata" | head -n "$idx_end" | tail -n"+$idx_begin")" 
   codes="$(echo "$all_codes" | head -n "$idx_end" | tail -n"+$idx_begin")"
