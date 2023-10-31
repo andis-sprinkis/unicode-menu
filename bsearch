@@ -235,7 +235,7 @@ found() {
 }
 
 not_found() {
-  echo "${script}: No search space number in the given direction from the target number."
+  echo "${script}: No number in the search space for the given search equality."
   exit "1"
 }
 
