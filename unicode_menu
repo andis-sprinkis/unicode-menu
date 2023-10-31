@@ -15,26 +15,35 @@ path_file_unicodedata="/usr/share/unicode/UnicodeData.txt"
   exit 1
 }
 
-opt_a=
 opt_b=
+opt_m=
 opt_h=
-while getopts a:bh name; do
+while getopts m:n:bh name; do
   case $name in
-    a) opt_a=1
-       arg_opt_a="$OPTARG"
-       ;;
     b) opt_b=1
        ;;
     h) echo "$help_info"
        exit
       ;;
+    m) opt_m=1
+       arg_opt_m="$OPTARG"
+       ;;
+    n) opt_n=1
+       arg_opt_n="$OPTARG"
+       ;;
     ?) echo "$help_info"
        exit 2
        ;;
   esac
 done
 
-app_menu="${arg_opt_a:-fzf --preview-window=hidden}"
+prompt_menu_block="Choose a character block"
+prompt_menu_char="Choose a character"
+
+menu_block="$(echo "${arg_opt_m:-fzf --prompt='%M: ' --preview-window=hidden}" | sed "s/%M/${prompt_menu_block}/g")"
+menu_char="$(echo "${arg_opt_n:-fzf --prompt='%N: ' --preview-window=hidden}" | sed "s/%N/${prompt_menu_char}/g")"
+
+# e.g. -b -m "dmenu -p '%M: ' " -n "dmenu -p '%N: ' "
 
 [ "$opt_b" ] && {
   file_unicodeblocks="$(<"$path_file_unicodeblocks")"
@@ -45,7 +54,7 @@ app_menu="${arg_opt_a:-fzf --preview-window=hidden}"
     printf "%s" "$file_unicodeblocks" | head -n "$idx_end_blocks" | tail -n"+$idx_begin_blocks"
   )"
 
-  menu_item_block="$(echo "$unicodeblocks" | sed -e 's/^/[ /g' -e 's/; / ] - [ /g' -e 's/$/ ]/g' | $app_menu)"
+  menu_item_block="$(echo "$unicodeblocks" | sed -e 's/^/[ /g' -e 's/; / ] - [ /g' -e 's/$/ ]/g' | eval "$menu_block")"
 
   range="$(printf "%s" "$menu_item_block" | sed -n "s/^\[ \(.*.\) \] -.*$/\1/p" | sed -n "s/\.\./ /p")"
 
@@ -97,7 +106,7 @@ menu_item_character="$(
     <(echo "$chars") \
     <(echo "$codes" | sed -e 's/$/ ] -/g' -e 's/^/[ /g') \
     <(echo "$names") \
-  | $app_menu
+  | eval "$menu_char"
 )"
 
 printf "%s" "$menu_item_character" | sed -n "s/^\[ \(.*.\) \] - \[ .*. \] - \[ .*. \]/\1/p"
