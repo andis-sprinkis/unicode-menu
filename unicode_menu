@@ -49,8 +49,7 @@ app_menu="${arg_opt_a:-fzf --preview-window=hidden}"
 
   range="$(printf "%s" "$menu_item_block" | sed -n "s/^\[ \(.*.\) \] -.*$/\1/p" | sed -n "s/\.\./ /p")"
 
-  code_tgt_begin="$(cut -d " " -f 1 <<< "$range")"
-  code_tgt_end="$(cut -d " " -f 2 <<< "$range")"
+  read -r "code_tgt_begin" "code_tgt_end" < <(echo "$range")
 }
 
 file_unicodedata="$(cut -d ";" -f "1,2,11" --output-delimiter ";" "$path_file_unicodedata")"
@@ -60,10 +59,12 @@ all_codes="$(cut -d ";" -f "1" <<< "$file_unicodedata")"
   read -r "idx_begin" "code_begin" < <(
     $dir/bsearch -s <(echo "$all_codes") -t "$code_tgt_begin" -i -b "hex" -e "ge" -r "min"
   )
+  idx_begin="$(("$idx_begin" + "1"))"
 
   read -r "idx_end" "code_end" < <(
     $dir/bsearch -s <(echo "$all_codes") -t "$code_tgt_end" -i -b "hex" -e "le" -r "max"
   )
+  idx_end="$(("$idx_end" + "1"))"
 
   unicodedata="$(echo "$file_unicodedata" | head -n "$idx_end" | tail -n"+$idx_begin")" 
   codes="$(echo "$all_codes" | head -n "$idx_end" | tail -n"+$idx_begin")"
