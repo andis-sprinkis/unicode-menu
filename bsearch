@@ -86,6 +86,19 @@ hex_to_dec() {
   printf '%d' "0x${1}";
 }
 
+dec() {
+  [ "$base" = "hex" ] && { hex_to_dec "$1"; return; }
+  echo "$1"
+}
+
+at() {
+  echo "$space" | sed "$(("$1" + "1"))!d" # +1 for 0-indexed idx conversion to line num
+}
+
+dec_at() {
+  dec "$(at "$1")"
+}
+
 opt_b=
 opt_e=
 opt_r=
@@ -190,32 +203,28 @@ print_idx="$opt_i"
 print_state() {
   [ ! "$debug" ] && return
 
-  [ "$idx_min" ] && [ "$idx_min" -ge "0" ] && min="$(at "$idx_min")"
-  [ "$idx_max" ] && [ "$idx_max" -ge "0" ] && max="$(at "$idx_max")"
-  [ "$idx_mid" ] && [ "$idx_mid" -ge "0" ] && mid="$(at "$idx_mid")"
+  [ "$idx_min" ] && [ "$idx_min" -ge "0" ] && min_orig="$(at "$idx_min")" min="$(dec "$min_orig")"
+  [ "$idx_max" ] && [ "$idx_max" -ge "0" ] && max_orig="$(at "$idx_max")" max="$(dec "$max_orig")"
+  [ "$idx_mid" ] && [ "$idx_mid" -ge "0" ] && mid_orig="$(at "$idx_mid")" mid="$(dec "$mid_orig")"
   [ "$idx_max" ] && [ "$idx_min" ] && len="$(("$idx_max" - "$idx_min"))"
 
   state="----:
 :
-Target value:${tgt}
+Target value:${tgt_orig} (dec. ${tgt})
 Search equality:${eql}
 Repetition bound.:${rpt}
 Search space len.:${len}
 Middle index:${idx_mid}
-Middle value:${mid}
+Middle value:${mid_orig} (dec. ${mid})
 Minimum index:${idx_min}
-Minimum value:${min}
+Minimum value:${min_orig} (dec. ${mid})
 Maximum index:${idx_max}
-Maximum value:${max}
+Maximum value:${max_orig} (dec. ${max})
 Loop:${idx_loop}
 Iteration:${idx_itr}
 :"
 
   column -t -s ':' -W "2" <<< "$state"
-}
-
-at() {
-  echo "$space" | sed "$(("$1" + "1"))!d" # +1 for 0-indexed idx conversion to line num
 }
 
 found() {
@@ -245,23 +254,23 @@ search_loop() {
 }
 
 [ "$eql" = "lt" ] && {
-  [ "$tgt" -le "$(at "0")" ] && not_found
-  f() { [ "$(at $(("$idx_mid" + "1")))" -ge "$tgt" ] && echo "1" || echo "0"; }
+  [ "$tgt" -le "$(dec_at "0")" ] && not_found
+  f() { [ "$(dec_at $(("$idx_mid" + "1")))" -ge "$tgt" ] && echo "1" || echo "0"; }
 }
 
 [ "$eql" = "le" ] && {
-  [ "$tgt" -lt "$(at "0")" ] && not_found
-  f() { [ "$(at $(("$idx_mid" + "1")))" -gt "$tgt" ] && echo "1" || echo "0"; }
+  [ "$tgt" -lt "$(dec_at "0")" ] && not_found
+  f() { [ "$(dec_at $(("$idx_mid" + "1")))" -gt "$tgt" ] && echo "1" || echo "0"; }
 }
 
 [ "$eql" = "gt" ] && {
-  [ "$tgt" -ge "$(at "$(("$len_space" - "1"))")" ] && not_found
-  f() { [ "$(at "$idx_mid")" -gt "$tgt" ] && echo "1" || echo "0"; }
+  [ "$tgt" -ge "$(dec_at "$(("$len_space" - "1"))")" ] && not_found
+  f() { [ "$(dec_at "$idx_mid")" -gt "$tgt" ] && echo "1" || echo "0"; }
 }
 
 [ "$eql" = "ge" ] && {
-  [ "$tgt" -gt "$(at "$(("$len_space" - "1"))")" ] && not_found
-  f() { [ "$(at "$idx_mid")" -ge "$tgt" ] && echo "1" || echo "0"; }
+  [ "$tgt" -gt "$(dec_at "$(("$len_space" - "1"))")" ] && not_found
+  f() { [ "$(dec_at "$idx_mid")" -ge "$tgt" ] && echo "1" || echo "0"; }
 }
 
 [ "$eql" = "lt" ] || [ "$eql" = "le" ] && idx_min="-1" idx_max="$(("$len_space" - "1"))"
@@ -271,13 +280,15 @@ search_loop
 
 { 
   [ "$rpt" = "min" ] && { [ "$eql" = "lt" ] || [ "$eql" = "le" ]; } && {
-    idx_res="$idx_min" idx_min="0" idx_max="$idx_res"
-    f() { [ "$(at "$idx_mid")" -eq "$(at "$idx_res")" ] && echo "1" || echo "0"; }
+    idx_res="$idx_min" res="$(dec_at "$idx_min")"
+    idx_min="0" idx_max="$idx_res"
+    f() { [ "$(dec_at "$idx_mid")" -eq "$res" ] && echo "1" || echo "0"; }
   } 
 } || {
   [ "$rpt" = "max" ] && { [ "$eql" = "gt" ] || [ "$eql" = "ge" ]; } && {
-    idx_res="$idx_min" idx_min="$(("$idx_res" - "1"))" idx_max="$(("$len_space" - "1"))"
-    f() { [ "$(at "$(("$idx_mid" + "1"))")" -ne "$(at "$idx_res")" ] && echo "1" || echo "0"; }
+    idx_res="$idx_min" res="$(dec_at "$idx_min")"
+    idx_min="$(("$idx_res" - "1"))" idx_max="$(("$len_space" - "1"))"
+    f() { [ "$(dec_at "$(("$idx_mid" + "1"))")" -ne "$res" ] && echo "1" || echo "0"; }
   } 
 } && search_loop
 
