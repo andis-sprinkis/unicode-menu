@@ -17,9 +17,6 @@ path_file_unicodedata="/usr/share/unicode/UnicodeData.txt"
 
 opt_a=
 opt_b=
-opt_c=
-opt_n=
-opt_p=
 opt_h=
 while getopts a:bh name; do
   case $name in
