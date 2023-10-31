@@ -37,6 +37,16 @@ while getopts m:n:bh name; do
   esac
 done
 
+block_bound_begin() {
+  # $dir/bsearch -s <(echo "$all_codes") -t "$code_tgt_begin" -i -b "hex" -e "ge" -r "min"
+  # ge min
+}
+
+block_bound_end() {
+  # $dir/bsearch -s <(echo "$all_codes") -t "$code_tgt_end" -i -b "hex" -e "le" -r "max"
+  # le max
+}
+
 prompt_menu_block="Choose a character block"
 prompt_menu_char="Choose a character"
 
@@ -106,7 +116,5 @@ menu_item_character="$(
     <(echo "$names") \
   | eval "$menu_char"
 )"
-
-# Print char.
 
 printf "%s" "$menu_item_character" | sed -n "s/^\[ \(.*.\) \] - \[ .*. \] - \[ .*. \]/\1/p"
