@@ -37,23 +37,55 @@ while getopts m:n:bh name; do
   esac
 done
 
+# For determining the unicode blocks inexact bounaries, the binary search implementation is extracted from https://github.com/andis-sprinkis/binary-search-shell
+
+hex_to_dec() { printf '%d' "0x${1}"; }
+
+dec() { hex_to_dec "$1"; }
+
+at() {
+  echo "$space" | sed "$(("$1" + "1"))!d" # +1 for 0-indexed idx conversion to line num
+}
+
+dec_at() { dec "$(at "$1")"; }
+
 block_bound_begin() {
-  # $dir/bsearch -s <(echo "$all_codes") -t "$code_tgt_begin" -i -b "hex" -e "ge" -r "min"
-  # ge min
+  # Binary search:
+  # - Equality - ge
+  # - Repetition boundary - min
+
+  tgt="$(hex_to_dec "$code_tgt_begin")" idx_min="0" idx_max="$len_space"
+  while [ "$idx_min" -lt "$idx_max" ]; do
+    idx_mid="$(("$idx_min" + ("$idx_max" - "$idx_min") / "2"))"
+    [ "$(dec_at "$idx_mid")" -ge "$tgt" ] && idx_max="$idx_mid" || idx_min="$(("$idx_mid" + "1"))"
+  done
+
+  idx_res="$idx_min" res="$(dec_at "$idx_min")" idx_min="0" idx_max="$idx_res"
+  while [ "$idx_min" -lt "$idx_max" ]; do
+    idx_mid="$(("$idx_min" + ("$idx_max" - "$idx_min") / "2"))"
+    [ "$(dec_at "$idx_mid")" -eq "$res" ] && idx_max="$idx_mid" || idx_min="$(("$idx_mid" + "1"))"
+  done
+
+  echo "$idx_min"
 }
 
 block_bound_end() {
-  # $dir/bsearch -s <(echo "$all_codes") -t "$code_tgt_end" -i -b "hex" -e "le" -r "max"
-  # le max
+  # Binary search:
+  # - Equality - le 
+  # - Repetition boundary - max
+
+  tgt="$(hex_to_dec "$code_tgt_end")" idx_min="-1" idx_max="$(("$len_space" - "1"))"
+  while [ "$idx_min" -lt "$idx_max" ]; do
+    idx_mid="$(("$idx_min" + ("$idx_max" - "$idx_min") / "2"))"
+    [ "$(dec_at $(("$idx_mid" + "1")))" -gt "$tgt" ] && idx_max="$idx_mid" || idx_min="$(("$idx_mid" + "1"))"
+  done
+
+  echo "$idx_min"
 }
 
-prompt_menu_block="Choose a character block"
-prompt_menu_char="Choose a character"
-
+prompt_menu_block="Choose a character block" prompt_menu_char="Choose a character"
 menu_block="$(echo "${arg_opt_m:-fzf --prompt='%M: ' --preview-window=hidden}" | sed "s/%M/${prompt_menu_block}/g")"
 menu_char="$(echo "${arg_opt_n:-fzf --prompt='%N: ' --preview-window=hidden}" | sed "s/%N/${prompt_menu_char}/g")"
-
-# e.g. -b -m "dmenu -p '%M: ' " -n "dmenu -p '%N: ' "
 
 file_unicodedata="$(cut -d ";" -f "1,2,11" --output-delimiter ";" "$path_file_unicodedata")"
 all_codes="$(cut -d ";" -f "1" <<< "$file_unicodedata")"
@@ -72,16 +104,12 @@ all_codes="$(cut -d ";" -f "1" <<< "$file_unicodedata")"
   read -r "code_tgt_begin" "code_tgt_end" < <(echo "$range")
 }
 
-[ "$code_tgt_begin" ] && [ "$code_tgt_end" ] && {
-  read -r "idx_begin" "code_begin" < <(
-    $dir/bsearch -s <(echo "$all_codes") -t "$code_tgt_begin" -i -b "hex" -e "ge" -r "min"
-  )
-  idx_begin="$(("$idx_begin" + "1"))"
+space="$all_codes"
+len_space="$(wc -l <<< "$space")"
 
-  read -r "idx_end" "code_end" < <(
-    $dir/bsearch -s <(echo "$all_codes") -t "$code_tgt_end" -i -b "hex" -e "le" -r "max"
-  )
-  idx_end="$(("$idx_end" + "1"))"
+[ "$code_tgt_begin" ] && [ "$code_tgt_end" ] && {
+  idx_begin="$(("$(block_bound_begin)" + "1"))"
+  idx_end="$(("$(block_bound_end)" + "1"))"
 
   unicodedata="$(echo "$file_unicodedata" | head -n "$idx_end" | tail -n"+$idx_begin")" 
   codes="$(echo "$all_codes" | head -n "$idx_end" | tail -n"+$idx_begin")"
