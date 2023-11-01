@@ -101,11 +101,11 @@ all_codes="$(cut -d ";" -f "1" <<< "$file_unicodedata")"
   read -r "code_tgt_begin" "code_tgt_end" < <(echo "$range")
 }
 
-space="$all_codes"
-len_space="$(wc -l <<< "$space")"
 
 [ "$code_tgt_begin" ] && [ "$code_tgt_end" ] && {
+  space="$all_codes" len_space="$(wc -l <<< "$space")"
   idx_begin="$(("$(block_bound_begin)" + "1"))" idx_end="$(("$(block_bound_end)" + "1"))"
+
   unicodedata="$(echo "$file_unicodedata" | head -n "$idx_end" | tail -n"+$idx_begin")" 
   codes="$(echo "$all_codes" | head -n "$idx_end" | tail -n"+$idx_begin")"
 } || {
