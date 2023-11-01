@@ -65,7 +65,6 @@ block_bound_begin() {
     idx_mid="$(("$idx_min" + ("$idx_max" - "$idx_min") / "2"))"
     [ "$(dec_at "$idx_mid")" -eq "$res" ] && idx_max="$idx_mid" || idx_min="$(("$idx_mid" + "1"))"
   done
-
   echo "$idx_min"
 }
 
@@ -73,13 +72,11 @@ block_bound_end() {
   # Binary search:
   # - Equality - le 
   # - Repetition boundary - max
-
   tgt="$(hex_to_dec "$code_tgt_end")" idx_min="-1" idx_max="$(("$len_space" - "1"))"
   while [ "$idx_min" -lt "$idx_max" ]; do
     idx_mid="$(("$idx_min" + ("$idx_max" - "$idx_min") / "2"))"
     [ "$(dec_at $(("$idx_mid" + "1")))" -gt "$tgt" ] && idx_max="$idx_mid" || idx_min="$(("$idx_mid" + "1"))"
   done
-
   echo "$idx_min"
 }
 
@@ -108,14 +105,11 @@ space="$all_codes"
 len_space="$(wc -l <<< "$space")"
 
 [ "$code_tgt_begin" ] && [ "$code_tgt_end" ] && {
-  idx_begin="$(("$(block_bound_begin)" + "1"))"
-  idx_end="$(("$(block_bound_end)" + "1"))"
-
+  idx_begin="$(("$(block_bound_begin)" + "1"))" idx_end="$(("$(block_bound_end)" + "1"))"
   unicodedata="$(echo "$file_unicodedata" | head -n "$idx_end" | tail -n"+$idx_begin")" 
   codes="$(echo "$all_codes" | head -n "$idx_end" | tail -n"+$idx_begin")"
 } || {
-  unicodedata="$file_unicodedata"
-  codes="$all_codes"
+  unicodedata="$file_unicodedata" codes="$all_codes"
 }
 
 names="$(
