@@ -1,6 +1,30 @@
 #!/usr/bin/env sh
 set -e
 
+script="$(basename "$0")"
+help_info="NAME
+    ${script} - Select Unicode characters from a menu interface.
+
+SYNOPSIS
+    ${script} [-b] [-m COMMAND] [-n COMMAND]
+
+DESCRIPTION
+    Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.
+
+    -b
+        To first select the Unicode character block.
+
+    -m COMMAND
+        The character block selection menu command.
+
+        %P is a subsitution string for using the built-in prompt text.
+
+    -n COMMAND
+        The character selection menu command.
+
+        %P is a subsitution string for using the built-in prompt text.
+"
+
 path_file_unicodeblocks="/usr/share/unicode/Blocks.txt"
 path_file_unicodedata="/usr/share/unicode/UnicodeData.txt"
 
@@ -16,6 +40,7 @@ path_file_unicodedata="/usr/share/unicode/UnicodeData.txt"
 
 opt_b=
 opt_m=
+opt_n=
 opt_h=
 while getopts m:n:bh name; do
   case $name in
@@ -80,8 +105,8 @@ block_bound_end() {
 }
 
 prompt_menu_block="Choose a character block" prompt_menu_char="Choose a character"
-menu_block="$(echo "${arg_opt_m:-fzf --prompt='%M: ' --preview-window=hidden}" | sed "s/%M/${prompt_menu_block}/g")"
-menu_char="$(echo "${arg_opt_n:-fzf --prompt='%N: ' --preview-window=hidden}" | sed "s/%N/${prompt_menu_char}/g")"
+menu_block="$(echo "${arg_opt_m:-fzf --prompt='%P: ' --preview-window=hidden}" | sed "s/%P/${prompt_menu_block}/g")"
+menu_char="$(echo "${arg_opt_n:-fzf --prompt='%P: ' --preview-window=hidden}" | sed "s/%P/${prompt_menu_char}/g")"
 
 file_unicodedata="$(cut -d ";" -f "1,2,11" --output-delimiter ";" "$path_file_unicodedata")"
 all_codes="$(cut -d ";" -f "1" <<< "$file_unicodedata")"
