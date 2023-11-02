@@ -56,9 +56,11 @@ while getopts m:n:bh name; do
   esac
 done
 
-prompt_menu_block="Choose a character block" prompt_menu_char="Choose a character"
-menu_block="$(echo "${arg_opt_m:-fzf --prompt='%P: ' --preview-window=hidden}" | sed "s/%P/${prompt_menu_block}/g")"
-menu_char="$(echo "${arg_opt_n:-fzf --prompt='%P: ' --preview-window=hidden}" | sed "s/%P/${prompt_menu_char}/g")"
+prompt_block="Choose a character block" 
+menu_block="$(echo "${arg_opt_m:-fzf --prompt='%P: ' --preview-window=hidden}" | sed "s/%P/${prompt_block}/g")"
+
+prompt_char="Choose a character"
+menu_char="$(echo "${arg_opt_n:-fzf --prompt='%P: ' --preview-window=hidden}" | sed "s/%P/${prompt_char}/g")"
 
 file_unicodedata="$(cut -d ";" -f "1,2,11" --output-delimiter ";" "$path_file_unicodedata")"
 all_codes="$(cut -d ";" -f "1" <<< "$file_unicodedata")"
@@ -70,11 +72,11 @@ all_codes="$(cut -d ";" -f "1" <<< "$file_unicodedata")"
 
   unicodeblocks="$(printf "%s" "$file_unicodeblocks" | head -n "$idx_end_blocks" | tail -n"+$idx_begin_blocks")"
 
-  menu_item_block="$(echo "$unicodeblocks" | sed -e 's/^/[ /g' -e 's/; / ] - [ /g' -e 's/$/ ]/g' | eval "$menu_block")"
+  selected_block="$(echo "$unicodeblocks" | sed -e 's/^/[ /g' -e 's/; / ] - [ /g' -e 's/$/ ]/g' | eval "$menu_block")"
 
-  range="$(printf "%s" "$menu_item_block" | sed -n "s/^\[ \(.*.\) \] -.*$/\1/p" | sed -n "s/\.\./ /p")"
-
-  read -r "code_tgt_begin" "code_tgt_end" < <(echo "$range")
+  read -r "code_tgt_begin" "code_tgt_end" < <(
+    echo "$(printf "%s" "$selected_block" | sed -n "s/^\[ \(.*.\) \] -.*$/\1/p" | sed -n "s/\.\./ /p")"
+  )
 }
 
 # For determining the unicode blocks inexact bounaries, the binary search implementation is extracted from https://github.com/andis-sprinkis/binary-search-shell
@@ -118,19 +120,19 @@ dec_at() { dec "$(at "$1")"; }
   )" + "1"))"
 
   unicodedata="$(echo "$file_unicodedata" | head -n "$idx_end" | tail -n"+$idx_begin")" 
-  codes="$(echo "$all_codes" | head -n "$idx_end" | tail -n"+$idx_begin")"
+  selection_codes="$(echo "$all_codes" | head -n "$idx_end" | tail -n"+$idx_begin")"
 } || {
-  unicodedata="$file_unicodedata" codes="$all_codes"
+  unicodedata="$file_unicodedata" selection_codes="$all_codes"
 }
 
-names="$(
+selection_names="$(
   cut -d ";" -f "2,3" <<< "$unicodedata" | sed -e 's/;$//g' -e 's/;/ | /g' -e 's/$/ ]/g' -e 's/^/[ /g' -e 's/<\|>//g'
 )"
 
-chars="$(
+selection_chars="$(
   ifs_old=$IFS; IFS=$'\n'
 
-  for code in $codes; do
+  for code in $selection_codes; do
     [ "$code" = "0000" ] || [ "$code" = "000A" ] && {
       echo "[ ☠ ] -"
       continue
@@ -142,12 +144,12 @@ chars="$(
   IFS=$ifs_old
 )"
 
-menu_item_character="$(
+selected_char="$(
   paste -d" " \
-    <(echo "$chars") \
-    <(echo "$codes" | sed -e 's/$/ ] -/g' -e 's/^/[ /g') \
-    <(echo "$names") \
+    <(echo "$selection_chars") \
+    <(echo "$selection_codes" | sed -e 's/$/ ] -/g' -e 's/^/[ /g') \
+    <(echo "$selection_names") \
   | eval "$menu_char"
 )"
 
-printf "%s" "$menu_item_character" | sed -n "s/^\[ \(.*.\) \] - \[ .*. \] - \[ .*. \]/\1/p"
+printf "%s" "$selected_char" | sed -n "s/^\[ \(.*.\) \] - \[ .*. \] - \[ .*. \]/\1/p"
