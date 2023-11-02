@@ -1,6 +1,6 @@
 # Unicode menu
 
-Unicode character selector shell script compatible with menu applications like `dmenu` or `fzf`.
+Unicode character selector menu shell script compatible with menu applications like `dmenu`, `rofi` or `fzf`.
 
 ## Requirements
 
