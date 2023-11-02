@@ -28,20 +28,15 @@ DESCRIPTION
 path_file_unicodeblocks="/usr/share/unicode/Blocks.txt"
 path_file_unicodedata="/usr/share/unicode/UnicodeData.txt"
 
-[ -r "$path_file_unicodeblocks" ] || {
-  echo "$(basename "$0"): This script requires the Blocks.txt file from the package unicode-character-database"
-  exit 1
-}
-
-[ -r "$path_file_unicodedata" ] || {
-  echo "$(basename "$0"): This script requires the UnicodeData.txt file from the package unicode-character-database"
+[ -r "$path_file_unicodeblocks" ] && [ -r "$path_file_unicodedata" ] || {
+  echo "$(basename "$0"): This script requires the Blocks.txt and UnicodeData.txt files from the package unicode-character-database"
   exit 1
 }
 
 opt_b=
+opt_h=
 opt_m=
 opt_n=
-opt_h=
 while getopts m:n:bh name; do
   case $name in
     b) opt_b=1
