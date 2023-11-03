@@ -115,45 +115,49 @@ $(echo "$file_unicodeblocks" | head -n "$idx_end_blocks" | tail -n"+$idx_begin_b
     echo "$(printf "%s" "$selected_block" | sed -n "s/^\[ \(.*.\) \] -.*$/\1/p" | sed -n "s/\.\./ /p")"
   )
 
-  # For determining the unicode blocks inexact bounaries, the binary search implementation is extracted from https://github.com/andis-sprinkis/binary-search-shell
+  [ "$code_tgt_begin" = "0000" ] && [ "$code_tgt_end" = "10FFFF" ] && {
+    unicodedata="$file_unicodedata" selection_codes="$all_codes"
+  } || {
+    # For determining the unicode blocks inexact bounaries, the binary search implementation is extracted from https://github.com/andis-sprinkis/binary-search-shell
 
-  space="$all_codes" len_space="$(wc -l <<< "$space")"
-  idx_begin="$(("$({
-    # Binary search:
-    # - Equality - greater-or-equal
-    # - Repetition boundary - min. index
+    space="$all_codes" len_space="$(wc -l <<< "$space")"
+    idx_begin="$(("$({
+      # Binary search:
+      # - Equality - greater-or-equal
+      # - Repetition boundary - min. index
 
-    tgt="$(hex_to_dec "$code_tgt_begin")" idx_min="0" idx_max="$len_space"
-    while [ "$idx_min" -lt "$idx_max" ]; do
-      idx_mid="$(("$idx_min" + ("$idx_max" - "$idx_min") / "2"))"
-      [ "$(dec_at "$idx_mid")" -ge "$tgt" ] && idx_max="$idx_mid" || idx_min="$(("$idx_mid" + "1"))"
-    done
+      tgt="$(hex_to_dec "$code_tgt_begin")" idx_min="0" idx_max="$len_space"
+      while [ "$idx_min" -lt "$idx_max" ]; do
+        idx_mid="$(("$idx_min" + ("$idx_max" - "$idx_min") / "2"))"
+        [ "$(dec_at "$idx_mid")" -ge "$tgt" ] && idx_max="$idx_mid" || idx_min="$(("$idx_mid" + "1"))"
+      done
 
-    idx_res="$idx_min" res="$(dec_at "$idx_min")" idx_min="0" idx_max="$idx_res"
-    while [ "$idx_min" -lt "$idx_max" ]; do
-      idx_mid="$(("$idx_min" + ("$idx_max" - "$idx_min") / "2"))"
-      [ "$(dec_at "$idx_mid")" -eq "$res" ] && idx_max="$idx_mid" || idx_min="$(("$idx_mid" + "1"))"
-    done
+      idx_res="$idx_min" res="$(dec_at "$idx_min")" idx_min="0" idx_max="$idx_res"
+      while [ "$idx_min" -lt "$idx_max" ]; do
+        idx_mid="$(("$idx_min" + ("$idx_max" - "$idx_min") / "2"))"
+        [ "$(dec_at "$idx_mid")" -eq "$res" ] && idx_max="$idx_mid" || idx_min="$(("$idx_mid" + "1"))"
+      done
 
-    echo "$idx_min"
-  })" + "1"))"
+      echo "$idx_min"
+    })" + "1"))"
 
-  idx_end="$(("$(
-    # Binary search:
-    # - Equality - less-or-equal
-    # - Repetition boundary - max. index
+    idx_end="$(("$(
+      # Binary search:
+      # - Equality - less-or-equal
+      # - Repetition boundary - max. index
 
-    tgt="$(hex_to_dec "$code_tgt_end")" idx_min="-1" idx_max="$(("$len_space" - "1"))"
-    while [ "$idx_min" -lt "$idx_max" ]; do
-      idx_mid="$(("$idx_min" + ("$idx_max" - "$idx_min") / "2"))"
-      [ "$(dec_at $(("$idx_mid" + "1")))" -gt "$tgt" ] && idx_max="$idx_mid" || idx_min="$(("$idx_mid" + "1"))"
-    done
+      tgt="$(hex_to_dec "$code_tgt_end")" idx_min="-1" idx_max="$(("$len_space" - "1"))"
+      while [ "$idx_min" -lt "$idx_max" ]; do
+        idx_mid="$(("$idx_min" + ("$idx_max" - "$idx_min") / "2"))"
+        [ "$(dec_at $(("$idx_mid" + "1")))" -gt "$tgt" ] && idx_max="$idx_mid" || idx_min="$(("$idx_mid" + "1"))"
+      done
 
-    echo "$idx_min"
-  )" + "1"))"
+      echo "$idx_min"
+    )" + "1"))"
 
-  unicodedata="$(echo "$file_unicodedata" | head -n "$idx_end" | tail -n"+$idx_begin")" 
-  selection_codes="$(echo "$all_codes" | head -n "$idx_end" | tail -n"+$idx_begin")"
+    unicodedata="$(echo "$file_unicodedata" | head -n "$idx_end" | tail -n"+$idx_begin")" 
+    selection_codes="$(echo "$all_codes" | head -n "$idx_end" | tail -n"+$idx_begin")"
+  }
 } || {
   unicodedata="$file_unicodedata" selection_codes="$all_codes"
 }
@@ -195,15 +199,15 @@ fmt_val_urlencode="$(printf "$fmt_val_char" | hexdump -e '4/1 "%02x" "\n"' | sed
 
 selection_fmts="[ Character ] - [ ${fmt_val_char} ]
 [ Name ] - [ ${fmt_val_name} ]
-[ Codepoint ] - [ U+${fmt_val_hex} ]
-[ C, C++, Java ] - [ \u${fmt_val_hex} ]
-[ CSS ] [ \0${fmt_val_hex} ]
-[ HTML (decimal) ] - [ &#${fmt_val_dec}; ]
-[ HTML (hex) ] - [ &#x${fmt_val_hex}; ]
-[ JavaScript, JSON ] - [ \u${fmt_val_hex} ]
-[ Python ] - [ \u${fmt_val_hex} ]
-[ Ruby ] - [ \u${fmt_val_hex} ]
-[ Rust ] - [ \u{${fmt_val_hex}} ]
+[ Codepoint (U+X) ] - [ U+${fmt_val_hex} ]
+[ C, C++, Java (\\uX) ] - [ \u${fmt_val_hex} ]
+[ CSS (\\X) ] - [ \\${fmt_val_hex} ]
+[ HTML/XML (decimal) (&#X;) ] - [ &#${fmt_val_dec}; ]
+[ HTML/XML (hex) (&#xX;) ] - [ &#x${fmt_val_hex}; ]
+[ JavaScript, JSON (\\uX) ] - [ \u${fmt_val_hex} ]
+[ Python (\\uX) ] - [ \u${fmt_val_hex} ]
+[ Ruby (\\uX) ] - [ \u${fmt_val_hex} ]
+[ Rust (\\uX) ] - [ \u{${fmt_val_hex}} ]
 [ URL escape code ] - [ ${fmt_val_urlencode} ]
 [ Wikipedia ] - [ https://en.wikipedia.org/wiki/${fmt_val_urlencode} ]"
 
