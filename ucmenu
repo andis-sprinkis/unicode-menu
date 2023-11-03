@@ -3,62 +3,73 @@ set -e
 
 script="$(basename "$0")"
 help_info="NAME
-    ${script} - Select Unicode characters from a menu interface.
+    ${script} - Use a menu proram to select a Unicode character's value, property or an escape sequence.
 
 SYNOPSIS
-    ${script} [-b] [-m COMMAND] [-n COMMAND]
+    ${script} [-b] [-m COMMAND] [-n COMMAND] [-r COMMAND] [-k FILE] [-t FILE]
 
 DESCRIPTION
-    Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.
+    For presenting the menu options, this script requires a menu application like dmenu, fzf (default) or rofi.
+
+    The final-selected character output property gets printed to stdout.
 
     -b
-        To first select the Unicode character block.
+        To first select the Unicode character block to limit the character search to.
 
     -m COMMAND
-        The character block selection menu command.
-
-        %P is a subsitution string for using the built-in prompt text.
+        The Unicode block selection menu command.
 
     -n COMMAND
-        The character selection menu command.
-
-        %P is a subsitution string for using the built-in prompt text.
+        The Unicode character selection menu command.
 
     -r COMMAND
-        The character format selection menu command.
-
-        %P is a subsitution string for using the built-in prompt text.
+        The format selection menu command.
 
     -k FILE
         The Unicode Character Database (UCD) Blocks.txt file path.
 
     -t FILE
         The Unicode Character Database (UCD) UnicodeData.txt file path.
+
+    For COMMAND argument in -m, -n, -r string \"%P\" is a subsitution placeholder for using the built-in prompt text.
+
+    For example, to use dmenu as the character menu program with the built-int prompt text, execute
+    $(basename "$0") -n \"dmenu -p '%P'\"
+
+    The default menu command for all 3 of the above arguments is fzf --prompt='%P: ' --preview-window=hidden
 "
 
 opt_b=
 opt_h=
+opt_k=
 opt_m=
 opt_n=
 opt_r=
-while getopts m:n:bh name; do
+opt_t=
+while getopts m:n:r:k:t:bh name; do
   case $name in
-    b) opt_b=1
+    b) opt_b="1"
        ;;
     h) echo "$help_info"
        exit
       ;;
-    m) opt_m=1
+    m) opt_m="1"
        arg_opt_m="$OPTARG"
        ;;
-    n) opt_n=1
+    n) opt_n="1"
        arg_opt_n="$OPTARG"
        ;;
-    r) opt_r=1
+    r) opt_r="1"
        arg_opt_r="$OPTARG"
        ;;
+    k) opt_k="1"
+       arg_opt_k="$OPTARG"
+       ;;
+    k) opt_t="1"
+       arg_opt_t="$OPTARG"
+       ;;
     ?) echo "$help_info"
-       exit 2
+       exit "2"
        ;;
   esac
 done
@@ -69,7 +80,7 @@ menu_block="$(echo "${arg_opt_m:-fzf --prompt='%P: ' --preview-window=hidden}" |
 prompt_char="Choose a character"
 menu_char="$(echo "${arg_opt_n:-fzf --prompt='%P: ' --preview-window=hidden}" | sed "s/%P/${prompt_char}/g")"
 
-prompt_char="Choose a format"
+prompt_char="Choose the output value"
 menu_fmt="$(echo "${arg_opt_r:-fzf --prompt='%P: ' --preview-window=hidden}" | sed "s/%P/${prompt_char}/g")"
 
 path_file_unicodeblocks="${arg_opt_k:-/usr/share/unicode/Blocks.txt}"
@@ -96,6 +107,8 @@ dec_at() { dec "$(at "$1")"; }
   unicodeblocks="$(echo "$file_unicodeblocks" | head -n "$idx_end_blocks" | tail -n"+$idx_begin_blocks")"
 
   selected_block="$(echo "$unicodeblocks" | sed -e 's/^/[ /g' -e 's/; / ] - [ /g' -e 's/$/ ]/g' | eval "$menu_block")"
+
+  [ ! "$selected_block" ] && exit 1
 
   read -r "code_tgt_begin" "code_tgt_end" < <(
     echo "$(printf "%s" "$selected_block" | sed -n "s/^\[ \(.*.\) \] -.*$/\1/p" | sed -n "s/\.\./ /p")"
@@ -168,27 +181,31 @@ selected_char="$(
   | eval "$menu_char"
 )"
 
+[ ! "$selected_char" ] && exit 1
+
 fmt_val_char="$(printf "%s" "$selected_char" | sed -n "s/^\[ \(.*.\) \] - \[ .*. \] - \[ .*. \]/\1/p")"
 fmt_val_hex="$(printf "%s" "$selected_char" | sed -n "s/^\[ .*. \] - \[ \(.*.\) \] - \[ .*. \]/\1/p")"
 fmt_val_dec="$(hex_to_dec "$fmt_val_hex")"
 fmt_val_name="$(printf "%s" "$selected_char" | sed -n "s/^\[ .*. \] - \[ .*. \] - \[ \(.*.\) \]/\1/p")"
-fmt_val_urlencode="$(printf "$fmt_val_char" | hexdump -e '16/1 "%02x " "\n"' | sed -e 's/ //g' -e 's/../%&/g')"
+fmt_val_urlencode="$(printf "$fmt_val_char" | hexdump -e '4/1 "%02x" "\n"' | sed -e 's/ //g' -e 's/../%&/g')"
 
 selection_fmts="[ Character ] - [ ${fmt_val_char} ]
-[ Codepoint ] - [ U+${fmt_val_hex} ]
 [ Name ] - [ ${fmt_val_name} ]
+[ Codepoint ] - [ U+${fmt_val_hex} ]
+[ C, C++, Java ] - [ \u${fmt_val_hex} ]
+[ CSS ] [ \0${fmt_val_hex} ]
 [ HTML (decimal) ] - [ &#${fmt_val_dec}; ]
 [ HTML (hex) ] - [ &#x${fmt_val_hex}; ]
-[ URL escape code ] - [ ${fmt_val_urlencode} ]
-[ CSS ] [ \0${fmt_val_hex} ]
 [ JavaScript, JSON ] - [ \u${fmt_val_hex} ]
-[ C, C++, Java ] - [ \u${fmt_val_hex} ]
 [ Python ] - [ \u${fmt_val_hex} ]
-[ Rust ] - [ \u{${fmt_val_hex}} ]
 [ Ruby ] - [ \u${fmt_val_hex} ]
+[ Rust ] - [ \u{${fmt_val_hex}} ]
+[ URL escape code ] - [ ${fmt_val_urlencode} ]
 [ Wikipedia ] - [ https://en.wikipedia.org/wiki/${fmt_val_urlencode} ]"
 
 selected_fmt="$(echo "$selection_fmts" | eval "$menu_fmt")"
+
+[ ! "$selected_fmt" ] && exit 1
 
 val_selected_fmt="$(echo "$selected_fmt" | sed -n "s/^\[ .*. \] - \[ \(.*.\) \]/\1/p")"
 
