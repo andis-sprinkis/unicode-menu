@@ -119,8 +119,8 @@ dec_at() { dec "$(at "$1")"; }
   space="$all_codes" len_space="$(wc -l <<< "$space")"
   idx_begin="$(("$({
     # Binary search:
-    # - Equality - ge
-    # - Repetition boundary - min
+    # - Equality - greater-or-equal
+    # - Repetition boundary - min. index
 
     tgt="$(hex_to_dec "$code_tgt_begin")" idx_min="0" idx_max="$len_space"
     while [ "$idx_min" -lt "$idx_max" ]; do
@@ -133,18 +133,21 @@ dec_at() { dec "$(at "$1")"; }
       idx_mid="$(("$idx_min" + ("$idx_max" - "$idx_min") / "2"))"
       [ "$(dec_at "$idx_mid")" -eq "$res" ] && idx_max="$idx_mid" || idx_min="$(("$idx_mid" + "1"))"
     done
+
     echo "$idx_min"
   })" + "1"))"
 
   idx_end="$(("$(
     # Binary search:
-    # - Equality - le 
-    # - Repetition boundary - max
+    # - Equality - less-or-equal
+    # - Repetition boundary - max. index
+
     tgt="$(hex_to_dec "$code_tgt_end")" idx_min="-1" idx_max="$(("$len_space" - "1"))"
     while [ "$idx_min" -lt "$idx_max" ]; do
       idx_mid="$(("$idx_min" + ("$idx_max" - "$idx_min") / "2"))"
       [ "$(dec_at $(("$idx_mid" + "1")))" -gt "$tgt" ] && idx_max="$idx_mid" || idx_min="$(("$idx_mid" + "1"))"
     done
+
     echo "$idx_min"
   )" + "1"))"
 
