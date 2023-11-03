@@ -104,7 +104,8 @@ dec_at() { dec "$(at "$1")"; }
   idx_begin_blocks="$(grep "^0000..007F" --line-number <<< $file_unicodeblocks | cut -d ":" -f 1)"
   idx_end_blocks="$(grep "^100000..10FFFF" --line-number <<< $file_unicodeblocks | cut -d ":" -f 1)"
 
-  unicodeblocks="$(echo "$file_unicodeblocks" | head -n "$idx_end_blocks" | tail -n"+$idx_begin_blocks")"
+  unicodeblocks="0000..10FFFF; All Blocks
+$(echo "$file_unicodeblocks" | head -n "$idx_end_blocks" | tail -n"+$idx_begin_blocks")"
 
   selected_block="$(echo "$unicodeblocks" | sed -e 's/^/[ /g' -e 's/; / ] - [ /g' -e 's/$/ ]/g' | eval "$menu_block")"
 
@@ -158,7 +159,7 @@ dec_at() { dec "$(at "$1")"; }
 }
 
 selection_names="$(
-  cut -d ";" -f "2,3" <<< "$unicodedata" | sed -e 's/;$//g' -e 's/;/ | /g' -e 's/$/ ]/g' -e 's/^/[ /g' -e 's/<\|>//g'
+  cut -d ";" -f "2,3" <<< "$unicodedata" | sed -e 's/;$//g' -e 's/;/ | /g' -e 's/$/ ]/g' -e 's/^/[ /g'
 )"
 
 selection_chars="$(
