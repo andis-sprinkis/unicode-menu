@@ -23,20 +23,24 @@ DESCRIPTION
         The character selection menu command.
 
         %P is a subsitution string for using the built-in prompt text.
+
+    -r COMMAND
+        The character format selection menu command.
+
+        %P is a subsitution string for using the built-in prompt text.
+
+    -k FILE
+        The Unicode Character Database (UCD) Blocks.txt file path.
+
+    -t FILE
+        The Unicode Character Database (UCD) UnicodeData.txt file path.
 "
-
-path_file_unicodeblocks="/usr/share/unicode/Blocks.txt"
-path_file_unicodedata="/usr/share/unicode/UnicodeData.txt"
-
-[ -r "$path_file_unicodeblocks" ] && [ -r "$path_file_unicodedata" ] || {
-  echo "$(basename "$0"): This script requires the Blocks.txt and UnicodeData.txt files from the package unicode-character-database"
-  exit 1
-}
 
 opt_b=
 opt_h=
 opt_m=
 opt_n=
+opt_r=
 while getopts m:n:bh name; do
   case $name in
     b) opt_b=1
@@ -50,6 +54,9 @@ while getopts m:n:bh name; do
     n) opt_n=1
        arg_opt_n="$OPTARG"
        ;;
+    r) opt_r=1
+       arg_opt_r="$OPTARG"
+       ;;
     ?) echo "$help_info"
        exit 2
        ;;
@@ -61,6 +68,17 @@ menu_block="$(echo "${arg_opt_m:-fzf --prompt='%P: ' --preview-window=hidden}" |
 
 prompt_char="Choose a character"
 menu_char="$(echo "${arg_opt_n:-fzf --prompt='%P: ' --preview-window=hidden}" | sed "s/%P/${prompt_char}/g")"
+
+prompt_char="Choose a format"
+menu_fmt="$(echo "${arg_opt_r:-fzf --prompt='%P: ' --preview-window=hidden}" | sed "s/%P/${prompt_char}/g")"
+
+path_file_unicodeblocks="${arg_opt_k:-/usr/share/unicode/Blocks.txt}"
+path_file_unicodedata="${arg_opt_t:-/usr/share/unicode/UnicodeData.txt}"
+
+[ -r "$path_file_unicodeblocks" ] && [ -r "$path_file_unicodedata" ] || {
+  echo "$(basename "$0"): This script requires the Blocks.txt and UnicodeData.txt files from the Unicode Character Database (UCD)."
+  exit 1
+}
 
 file_unicodedata="$(cut -d ";" -f "1,2,11" --output-delimiter ";" "$path_file_unicodedata")"
 all_codes="$(cut -d ";" -f "1" <<< "$file_unicodedata")"
@@ -150,4 +168,28 @@ selected_char="$(
   | eval "$menu_char"
 )"
 
-printf "%s" "$selected_char" | sed -n "s/^\[ \(.*.\) \] - \[ .*. \] - \[ .*. \]/\1/p"
+fmt_val_char="$(printf "%s" "$selected_char" | sed -n "s/^\[ \(.*.\) \] - \[ .*. \] - \[ .*. \]/\1/p")"
+fmt_val_hex="$(printf "%s" "$selected_char" | sed -n "s/^\[ .*. \] - \[ \(.*.\) \] - \[ .*. \]/\1/p")"
+fmt_val_dec="$(hex_to_dec "$fmt_val_hex")"
+fmt_val_name="$(printf "%s" "$selected_char" | sed -n "s/^\[ .*. \] - \[ .*. \] - \[ \(.*.\) \]/\1/p")"
+fmt_val_urlencode="$(printf "$fmt_val_char" | hexdump -e '16/1 "%02x " "\n"' | sed -e 's/ //g' -e 's/../%&/g')"
+
+selection_fmts="[ Character ] - [ ${fmt_val_char} ]
+[ Codepoint ] - [ U+${fmt_val_hex} ]
+[ Name ] - [ ${fmt_val_name} ]
+[ HTML (decimal) ] - [ &#${fmt_val_dec}; ]
+[ HTML (hex) ] - [ &#x${fmt_val_hex}; ]
+[ URL escape code ] - [ ${fmt_val_urlencode} ]
+[ CSS ] [ \0${fmt_val_hex} ]
+[ JavaScript, JSON ] - [ \u${fmt_val_hex} ]
+[ C, C++, Java ] - [ \u${fmt_val_hex} ]
+[ Python ] - [ \u${fmt_val_hex} ]
+[ Rust ] - [ \u{${fmt_val_hex}} ]
+[ Ruby ] - [ \u${fmt_val_hex} ]
+[ Wikipedia ] - [ https://en.wikipedia.org/wiki/${fmt_val_urlencode} ]"
+
+selected_fmt="$(echo "$selection_fmts" | eval "$menu_fmt")"
+
+val_selected_fmt="$(echo "$selected_fmt" | sed -n "s/^\[ .*. \] - \[ \(.*.\) \]/\1/p")"
+
+echo "$val_selected_fmt"
