@@ -77,12 +77,11 @@ while getopts m:n:r:k:t:bh name; do
 done
 
 prompt_block="Character block" 
-menu_block="$(echo "${arg_opt_m:-fzf --prompt='%P: ' --preview-window=hidden}" | sed "s/%P/${prompt_block}/g")"
-
 prompt_char="Character"
-menu_char="$(echo "${arg_opt_n:-fzf --prompt='%P: ' --preview-window=hidden}" | sed "s/%P/${prompt_char}/g")"
-
 prompt_output="Output value"
+
+menu_block="$(echo "${arg_opt_m:-fzf --prompt='%P: ' --preview-window=hidden}" | sed "s/%P/${prompt_block}/g")"
+menu_char="$(echo "${arg_opt_n:-fzf --prompt='%P: ' --preview-window=hidden}" | sed "s/%P/${prompt_char}/g")"
 menu_fmt="$(echo "${arg_opt_r:-fzf --prompt='%P: ' --preview-window=hidden}" | sed "s/%P/${prompt_output}/g")"
 
 path_file_unicodeblocks="${arg_opt_k:-/usr/share/unicode/Blocks.txt}"
