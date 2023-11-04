@@ -14,7 +14,7 @@ ucmenu -h
 
 ## Requirements
 
--   A menu program, like `dmenu`, `rofi`, `fzf`.
+-   A menu program, like `dmenu`, `fzf`, `rofi`.
 -   The Unicode Character Database (UCD):
     -   [Home page](https://www.unicode.org/ucd/)
     -   [Arch Linux package](https://archlinux.org/packages/extra/any/unicode-character-database/)
