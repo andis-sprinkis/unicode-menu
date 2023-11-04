@@ -1,6 +1,6 @@
 # Unicode menu
 
-Unicode character selector shell script.
+A Unicode character selector shell script.
 
 Use a menu program to output a Unicode character's value, property or an escape sequence.
 
