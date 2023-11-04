@@ -2,10 +2,11 @@
 
 Unicode character selector shell script.
 
-Compatible with menu applications like `dmenu`, `rofi`, `fzf`.
+Use a menu program to output a Unicode character's value, property or an escape sequence.
 
 ## Requirements
 
+-   A menu program, like `dmenu`, `rofi`, `fzf`
 -   Unicode Character Database
     -   [Home page](https://www.unicode.org/ucd/)
     -   [Arch Linux package](https://archlinux.org/packages/extra/any/unicode-character-database/)

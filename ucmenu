@@ -3,7 +3,7 @@ set -e
 
 script="$(basename "$0")"
 help_info="NAME
-    ${script} - Use a menu proram to select a Unicode character's value, property or an escape sequence.
+    ${script} - Use a menu program to output a Unicode character's value, property or an escape sequence.
 
 SYNOPSIS
     ${script} [-b] [-m COMMAND] [-n COMMAND] [-r COMMAND] [-k FILE] [-t FILE]
@@ -31,12 +31,12 @@ DESCRIPTION
     -t FILE
         The Unicode Character Database (UCD) UnicodeData.txt file path.
 
-    For COMMAND argument in -m, -n, -r string \"%P\" is a subsitution placeholder for using the built-in prompt text.
+    For COMMAND argument in -m, -n, -r the string \"%P\" is the subsitution placeholder for using the built-in prompt text.
 
-    For example, to use dmenu as the character menu program with the built-int prompt text, execute
-    $(basename "$0") -n \"dmenu -p '%P'\"
+    The default menu command for block, character and output selection menus is \"fzf --prompt='%P: ' --preview-window=hidden\".
 
-    The default menu command for all 3 of the above arguments is fzf --prompt='%P: ' --preview-window=hidden
+    For example, to instead use dmenu as the menu program and use the default prompt text suffixed with \": \" for the block & character selection menus and a custom prompt text for the output selection menu:
+    $(basename "$0") -m \"dmenu -p '%P: '\" -n \"dmenu -p '%P: '\" -r \"dmenu -p 'Custom output menu prompt: '\"
 "
 
 opt_b=
@@ -74,13 +74,13 @@ while getopts m:n:r:k:t:bh name; do
   esac
 done
 
-prompt_block="Choose the character block" 
+prompt_block="Character block" 
 menu_block="$(echo "${arg_opt_m:-fzf --prompt='%P: ' --preview-window=hidden}" | sed "s/%P/${prompt_block}/g")"
 
-prompt_char="Choose the character"
+prompt_char="Character"
 menu_char="$(echo "${arg_opt_n:-fzf --prompt='%P: ' --preview-window=hidden}" | sed "s/%P/${prompt_char}/g")"
 
-prompt_char="Choose the output value"
+prompt_char="Output value"
 menu_fmt="$(echo "${arg_opt_r:-fzf --prompt='%P: ' --preview-window=hidden}" | sed "s/%P/${prompt_char}/g")"
 
 path_file_unicodeblocks="${arg_opt_k:-/usr/share/unicode/Blocks.txt}"
