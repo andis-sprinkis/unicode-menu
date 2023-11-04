@@ -31,6 +31,8 @@ DESCRIPTION
     -t FILE
         The Unicode Character Database (UCD) UnicodeData.txt file path.
 
+    The script requires a menu program like dmenu, fzf or rofi and the Unicode Character Database (UCD).
+
     For COMMAND argument in -m, -n, -r the string \"%P\" is the subsitution placeholder for using the built-in prompt text.
 
     The default menu command for block, character and output selection menus is \"fzf --prompt='%P: ' --preview-window=hidden\".
