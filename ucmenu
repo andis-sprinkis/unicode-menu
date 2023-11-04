@@ -82,8 +82,8 @@ menu_block="$(echo "${arg_opt_m:-fzf --prompt='%P: ' --preview-window=hidden}" |
 prompt_char="Character"
 menu_char="$(echo "${arg_opt_n:-fzf --prompt='%P: ' --preview-window=hidden}" | sed "s/%P/${prompt_char}/g")"
 
-prompt_char="Output value"
-menu_fmt="$(echo "${arg_opt_r:-fzf --prompt='%P: ' --preview-window=hidden}" | sed "s/%P/${prompt_char}/g")"
+prompt_output="Output value"
+menu_fmt="$(echo "${arg_opt_r:-fzf --prompt='%P: ' --preview-window=hidden}" | sed "s/%P/${prompt_output}/g")"
 
 path_file_unicodeblocks="${arg_opt_k:-/usr/share/unicode/Blocks.txt}"
 path_file_unicodedata="${arg_opt_t:-/usr/share/unicode/UnicodeData.txt}"
