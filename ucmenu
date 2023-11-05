@@ -67,7 +67,7 @@ while getopts m:n:r:k:t:h name; do
   esac
 done
 
-prompt_block="Character block" 
+prompt_block="Block" 
 prompt_char="Character"
 prompt_output="Output"
 
