@@ -33,9 +33,6 @@ DESCRIPTION
     For COMMAND argument in -m, -n, -r the string \"%P\" is the subsitution placeholder for using the built-in prompt text.
 
     The default menu command for block, character and output selection menus is \"fzf --prompt='%P: ' --preview-window=hidden\".
-
-    For example, to instead use dmenu as the menu program and use the default prompt text suffixed with \": \" for the block & character selection menus and a custom prompt text for the output selection menu:
-    $(basename "$0") -m \"dmenu -p '%P: '\" -n \"dmenu -p '%P: '\" -r \"dmenu -p 'Custom output menu prompt: '\"
 "
 
 opt_h=

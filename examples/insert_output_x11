@@ -3,7 +3,7 @@ set -e
 
 win="$(xdotool getwindowfocus)"
 
-output="$(ucmenu -m "dmenu -p '%P'" -n "dmenu -p '%P'" -r "dmenu -p '%P'")"
+output="$(ucmenu -m "dmenu -p '%P:'" -n "dmenu -p '%P:'" -r "dmenu -p '%P:'")"
 
 xdotool windowactivate "$win"
 
