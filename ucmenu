@@ -80,7 +80,7 @@ path_file_unicodedata="${arg_opt_t:-/usr/share/unicode/UnicodeData.txt}"
 
 [ -r "$path_file_unicodeblocks" ] && [ -r "$path_file_unicodedata" ] || {
   echo "$(basename "$0"): This script requires the Blocks.txt and UnicodeData.txt files from the Unicode Character Database (UCD)."
-  exit 1
+  exit "1"
 }
 
 file_unicodedata="$(cut -d ";" -f "1,2,11" --output-delimiter ";" "$path_file_unicodedata")"
@@ -100,7 +100,7 @@ $(echo "$file_unicodeblocks" | head -n "$idx_end_blocks" | tail -n"+$idx_begin_b
 
 selected_block="$(echo "$unicodeblocks" | sed -e 's/^/[ /g' -e 's/; / ] - [ /g' -e 's/$/ ]/g' | eval "$menu_block")"
 
-[ ! "$selected_block" ] && exit 1
+[ ! "$selected_block" ] && exit "1"
 
 read -r "code_tgt_begin" "code_tgt_end" < <(
   echo "$(printf "%s" "$selected_block" | sed -n "s/^\[ \(.*.\) \] -.*$/\1/p" | sed -n "s/\.\./ /p")"
@@ -177,7 +177,7 @@ selected_char="$(
   | eval "$menu_char"
 )"
 
-[ ! "$selected_char" ] && exit 1
+[ ! "$selected_char" ] && exit "1"
 
 selected_char_char="$(echo -n "$selected_char" | sed -n "s/^\[ \(.*.\) \] - \[ .*. \] - \[ .*. \]/\1/p")"
 selected_char_code_point="$(echo -n "$selected_char" | sed -n "s/^\[ .*. \] - \[ \(.*.\) \] - \[ .*. \]/\1/p")"
@@ -223,7 +223,7 @@ selected_ouput="$(echo "[ ${output_char} ] - [ Character ]
 [ ${output_code_point_escape_css_6_digit} ] - [ Code point | Hex. | Esc. | 6 digits | CSS ]
 [ ${output_url_wikipedia} ] - [ Wikipedia ]" | eval "$menu_fmt")"
 
-[ ! "$selected_ouput" ] && exit 1
+[ ! "$selected_ouput" ] && exit "1"
 
 output="$(echo -n "$selected_ouput" | sed -n "s/^\[ \(.*.\) \] - \[ .*. \]/\1/p")"
 
