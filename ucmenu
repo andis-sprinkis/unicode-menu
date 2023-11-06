@@ -79,7 +79,7 @@ path_file_unicodeblocks="${arg_opt_k:-/usr/share/unicode/Blocks.txt}"
 path_file_unicodedata="${arg_opt_t:-/usr/share/unicode/UnicodeData.txt}"
 
 [ -r "$path_file_unicodeblocks" ] && [ -r "$path_file_unicodedata" ] || {
-  echo "$(basename "$0"): This script requires the Blocks.txt and UnicodeData.txt files from the Unicode Character Database (UCD)."
+  echo "${script}: This script requires the Blocks.txt and UnicodeData.txt files from the Unicode Character Database (UCD)."
   exit "1"
 }
 
