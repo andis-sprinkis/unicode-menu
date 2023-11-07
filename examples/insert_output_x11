@@ -5,12 +5,13 @@ win="$(xdotool getwindowfocus)"
 
 output="$(ucmenu -m "dmenu -p '%P:'" -n "dmenu -p '%P:'" -r "dmenu -p '%P:'")"
 
-xdotool windowactivate "$win"
-
-tmp="$output"
-sleep "0.5"
-while [ -n "$tmp" ]; do
-  rest="${tmp#?}" first="${tmp%"$rest"}"
-  xdotool key "U$(echo -n "$first" | iconv -f "utf8" -t "utf32le" | hexdump -e '"%04X\n"')"
-  tmp="$rest"
-done
+[ "$output" ] && {
+  tmp="$output"
+  xdotool windowactivate "$win"
+  sleep "0.5"
+  while [ -n "$tmp" ]; do
+    rest="${tmp#?}" first="${tmp%"$rest"}"
+    xdotool key "U$(echo -n "$first" | iconv -f "utf8" -t "utf32le" | hexdump -e '"%04X\n"')"
+    tmp="$rest"
+  done
+}

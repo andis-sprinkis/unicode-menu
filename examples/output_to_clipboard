@@ -3,5 +3,7 @@ set -e
 
 output="$(ucmenu)"
 
-[ "$(command -v "xclip")" ] && { echo -n "$output" | xclip -sel "clipboard"; } && exit
-[ "$(command -v "pbcopy")" ] && { echo -n "$output" | pbcopy; } && exit
+[ "$output" ] && {
+  [ "$(command -v "xclip")" ] && { echo -n "$output" | xclip -sel "clipboard"; } && exit
+  [ "$(command -v "pbcopy")" ] && { echo -n "$output" | pbcopy; } && exit
+}
