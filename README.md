@@ -21,5 +21,5 @@ ucmenu -h
         -   [Arch Linux](https://archlinux.org/packages/extra/any/unicode-character-database/)
         -   [Debian GNU/Linux](https://packages.debian.org/search?searchon=names&keywords=unicode-data)
         -   [Fedora Linux](https://packages.fedoraproject.org/pkgs/unicode-ucd/unicode-ucd/)
-        -   [openSUSE Linux](https://software.opensuse.org/package/unicode-ucd)
-        -   [Ubuntu Linux](https://packages.ubuntu.com/search?keywords=unicode-data&searchon=names&suite=all&section=all)
+        -   [openSUSE](https://software.opensuse.org/package/unicode-ucd)
+        -   [Ubuntu](https://packages.ubuntu.com/search?keywords=unicode-data&searchon=names&suite=all&section=all)
