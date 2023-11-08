@@ -75,8 +75,21 @@ menu_block="$(echo "${arg_opt_m:-fzf --prompt='%P: ' --preview-window=hidden}" |
 menu_char="$(echo "${arg_opt_n:-fzf --prompt='%P: ' --preview-window=hidden}" | sed "s/%P/${prompt_char}/g")"
 menu_fmt="$(echo "${arg_opt_r:-fzf --prompt='%P: ' --preview-window=hidden}" | sed "s/%P/${prompt_output}/g")"
 
-path_file_unicodeblocks="${arg_opt_k:-/usr/share/unicode/Blocks.txt}"
-path_file_unicodedata="${arg_opt_t:-/usr/share/unicode/UnicodeData.txt}"
+path_file_unicodeblocks="$({
+  [ "$arg_opt_k" ] && echo "$arg_opt_k" || {
+    for path in "/usr/share/unicode/Blocks.txt" "${XDG_DATA_HOME:-$HOME/.local/share}/unicode/Blocks.txt"; do
+      [ -r "$path" ] && echo "$path" && break
+    done
+  }
+})"
+
+path_file_unicodedata="$({
+  [ "$arg_opt_t" ] && echo "$arg_opt_t" || {
+    for path in "/usr/share/unicode/UnicodeData.txt" "${XDG_DATA_HOME:-$HOME/.local/share}/unicode/UnicodeData.txt"; do
+      [ -r "$path" ] && echo "$path" && break
+    done
+  }
+})"
 
 [ -r "$path_file_unicodeblocks" ] && [ -r "$path_file_unicodedata" ] || {
   echo "${script}: This script requires the Blocks.txt and UnicodeData.txt files from the Unicode Character Database (UCD)."
