@@ -102,6 +102,22 @@ path_file_unicodedata="$({
 file_unicodedata="$(cut -d ";" -f "1,2,11" --output-delimiter ";" "$path_file_unicodedata")"
 all_codes="$(echo "$file_unicodedata" | cut -d ";" -f "1")"
 
+ucp_to_char() {
+  # echo -n "a"
+  printf '[ %b ] -\n' "\\U${1}"
+}
+
+case $OSTYPE in
+  darwin*) ucp_to_char() {
+    perl -CSDL -le "use open \":std\", \":encoding(UTF-8)\"; print \"[ \x{${1}} ] -\""
+    # too slow
+    # use zsh -c printf?
+    zsh -c "printf '[ %b ] -\n' \"\\U${1}\""
+    # too slow
+    # put the formatting loop in perl or zsh?
+  } ;; # Bash 3.2.57 (macOS)
+esac
+
 hex_to_dec() { printf '%d' "0x${1}"; }
 dec() { hex_to_dec "$1"; }
 at() { echo "$space" | sed "$(($1 + 1))!d"; } # +1 for 0-indexed idx conversion to line num
@@ -190,7 +206,8 @@ show_menu_chars() {
           continue
         }
 
-        printf '[ %b ] -\n' "\\U$code"
+        ucp_to_char "$code"
+        # printf '[ %b ] -\n' "\\U$code"
       done
 
       IFS=$ifs_old
