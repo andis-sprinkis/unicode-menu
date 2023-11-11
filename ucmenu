@@ -117,7 +117,8 @@ $(echo "$file_unicodeblocks" | head -n "$idx_end_blocks" | tail -n"+$idx_begin_b
 menu_blocks_selectables="$(echo "$unicodeblocks" | sed -e 's/^/[ /g' -e 's/; / ] - [ /g' -e 's/$/ ]/g')"
 
 show_menu_blocks() {
-  menu="blocks" 
+  menu_prev="$menu"
+  menu="blocks"
 
   selected_block_prev="$selected_block"
 
@@ -127,8 +128,10 @@ show_menu_blocks() {
 }
 
 show_menu_chars() {
+  menu_prev="$menu"
   menu="chars" 
-  [ "$selected_block" ] && [ "$selected_block_prev" = "$selected_block" ] || {
+
+  [ "$menu_prev" = "output" ] || { [ "$selected_block" ] && [ "$selected_block_prev" = "$selected_block" ]; } || {
     read -r "code_tgt_begin" "code_tgt_end" < <(
       echo "$(printf "%s" "$selected_block" | sed -n "s/^\[ \(.*.\) \] -.*$/\1/p" | sed -n "s/\.\./ /p")"
     )
@@ -212,7 +215,9 @@ show_menu_chars() {
 }
 
 show_menu_output() {
+  menu_prev="$menu"
   menu="output"
+
   [ "$selected_char" ] && [ "$selected_char_prev" = "$selected_char" ] || {
     selected_char_char="$(echo -n "$selected_char" | sed -n "s/^\[ \(.*.\) \] - \[ .*. \] - \[ .*. \]/\1/p")"
     selected_char_code_point="$(echo -n "$selected_char" | sed -n "s/^\[ .*. \] - \[ \(.*.\) \] - \[ .*. \]/\1/p")"
