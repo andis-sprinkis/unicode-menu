@@ -64,7 +64,7 @@ while getopts m:n:r:k:t:h name; do
     k) opt_t="1"
        arg_opt_t="$OPTARG"
        ;;
-    ?) echo "$help_info"
+    ?) echo "$help_info" 1>&2
        exit "2"
        ;;
   esac
@@ -95,7 +95,7 @@ path_file_unicodedata="$({
 })"
 
 [ -r "$path_file_unicodeblocks" ] && [ -r "$path_file_unicodedata" ] || {
-  echo "${script}: This script requires the Blocks.txt and UnicodeData.txt files from the Unicode Character Database (UCD)."
+  echo "${script}: This script requires the Blocks.txt and UnicodeData.txt files from the Unicode Character Database (UCD)." 1>&2
   exit "1"
 }
 
