@@ -100,16 +100,16 @@ path_file_unicodedata="$({
 }
 
 file_unicodedata="$(cut -d ";" -f "1,2,11" --output-delimiter ";" "$path_file_unicodedata")"
-all_codes="$(cut -d ";" -f "1" <<< "$file_unicodedata")"
+all_codes="$(echo "$file_unicodedata" | cut -d ";" -f "1")"
 
 hex_to_dec() { printf '%d' "0x${1}"; }
 dec() { hex_to_dec "$1"; }
 at() { echo "$space" | sed "$(("$1" + "1"))!d"; } # +1 for 0-indexed idx conversion to line num
 dec_at() { dec "$(at "$1")"; }
 
-file_unicodeblocks="$(<"$path_file_unicodeblocks")"
-idx_begin_blocks="$(grep "^0000..007F" --line-number <<< $file_unicodeblocks | cut -d ":" -f 1)"
-idx_end_blocks="$(grep "^100000..10FFFF" --line-number <<< $file_unicodeblocks | cut -d ":" -f 1)"
+file_unicodeblocks="$(cat "$path_file_unicodeblocks")"
+idx_begin_blocks="$(echo "$file_unicodeblocks" | grep "^0000..007F" --line-number | cut -d ":" -f 1)"
+idx_end_blocks="$(echo "$file_unicodeblocks" | grep "^100000..10FFFF" --line-number | cut -d ":" -f 1)"
 
 unicodeblocks="0000..10FFFF; All
 $(echo "$file_unicodeblocks" | head -n "$idx_end_blocks" | tail -n"+$idx_begin_blocks")"
@@ -133,7 +133,7 @@ show_menu_chars() {
 
   [ "$menu_prev" = "output" ] || { [ "$selected_block" ] && [ "$selected_block_prev" = "$selected_block" ]; } || {
     read -r "code_tgt_begin" "code_tgt_end" < <(
-      echo "$(printf "%s" "$selected_block" | sed -n "s/^\[ \(.*.\) \] -.*$/\1/p" | sed -n "s/\.\./ /p")"
+      printf "%s\n" "$selected_block" | sed -n "s/^\[ \(.*.\) \] -.*$/\1/p" | sed -n "s/\.\./ /p"
     )
 
     [ "$code_tgt_begin" = "0000" ] && [ "$code_tgt_end" = "10FFFF" ] && {
