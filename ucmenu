@@ -141,7 +141,7 @@ show_menu_chars() {
     } || {
       # For determining the unicode blocks inexact bounaries, the binary search implementation is extracted from https://github.com/andis-sprinkis/binary-search-shell
 
-      space="$all_codes" len_space="$(wc -l <<< "$space")"
+      space="$all_codes" len_space="$(echo "$space" | wc -l)"
       idx_begin="$(("$({
         # Binary search:
         # - Equality - greater-or-equal
@@ -180,12 +180,11 @@ show_menu_chars() {
       selection_codes="$(echo "$all_codes" | head -n "$idx_end" | tail -n"+$idx_begin")"
     }
 
-    selection_names="$(
-      cut -d ";" -f "2,3" <<< "$unicodedata" | sed -e 's/;$//g' -e 's/;/ | /g' -e 's/$/ ]/g' -e 's/^/[ /g'
-    )"
+    selection_names="$(echo "$unicodedata" | sed -e 's/;$//g' -e 's/;/ | /g' -e 's/$/ ]/g' -e 's/^/[ /g' | cut -d ";" -f "2,3")"
 
     selection_chars="$(
-      ifs_old=$IFS; IFS=$'\n'
+      ifs_old=$IFS; IFS="
+"
 
       for code in $selection_codes; do
         [ "$code" = "0000" ] || [ "$code" = "000A" ] && {
