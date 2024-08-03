@@ -1,9 +1,10 @@
 #!/usr/bin/env sh
-set -e
+set -eu
 
 output="$(ucmenu)"
 
 [ "$output" ] && {
-  [ "$(command -v "xclip")" ] && { echo -n "$output" | xclip -sel "clipboard"; } && exit
-  [ "$(command -v "pbcopy")" ] && { echo -n "$output" | pbcopy; } && exit
+  [ "$DISPLAY" ] && [ -z "$WAYLAND_DISPLAY" ] && { echo "$output" | xclip -sel "clipboard"; } && exit
+  [ "$WAYLAND_DISPLAY" ] && [ "$(command -v "wl-copy")" ] && { echo "$output" | wl-copy; } && exit
+  [ "$(command -v "pbcopy")" ] && { echo "$output" | pbcopy; } && exit
 }
