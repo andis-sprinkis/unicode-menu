@@ -4,7 +4,9 @@ set -eu
 output="$(ucmenu)"
 
 [ "$output" ] && {
-  [ "$DISPLAY" ] && [ -z "$WAYLAND_DISPLAY" ] && { echo "$output" | xclip -sel "clipboard"; } && exit
+  [ "$DISPLAY" ] && [ -z "$WAYLAND_DISPLAY" ] && [ "$(command -v "xclip")" ] && { echo "$output" | xclip -sel "clipboard"; } && exit
   [ "$WAYLAND_DISPLAY" ] && [ "$(command -v "wl-copy")" ] && { echo "$output" | wl-copy; } && exit
   [ "$(command -v "pbcopy")" ] && { echo "$output" | pbcopy; } && exit
+
+  exit "1"
 }
