@@ -9,7 +9,7 @@ SYNOPSIS
     ${script} [-b] [-m COMMAND] [-n COMMAND] [-r COMMAND] [-k FILE] [-t FILE]
 
 DESCRIPTION
-    For presenting the menu options, this script requires a menu application like dmenu, fzf (default) or rofi.
+    For presenting the menu options, this script requires a menu application like dmenu, wmenu, fzf (default) or rofi.
 
     The final-selected character output property gets printed to stdout.
 
