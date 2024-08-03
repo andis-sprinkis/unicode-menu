@@ -4,6 +4,7 @@ set -eu
 output="$(ucmenu -m "wmenu -p '%P:'" -n "wmenu -p '%P:'" -r "wmenu -p '%P:'")"
 
 [ "$output" ] && {
+  # TODO: refocus window
   sleep "0.5"
   wtype "$output"
 }
