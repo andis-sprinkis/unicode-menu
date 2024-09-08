@@ -3,10 +3,21 @@ set -eu
 
 output="$(ucmenu)"
 
-[ "$output" ] && {
-  [ "$DISPLAY" ] && [ -z "$WAYLAND_DISPLAY" ] && [ "$(command -v "xclip")" ] && { echo "$output" | xclip -sel "clipboard"; } && exit
-  [ "$WAYLAND_DISPLAY" ] && [ "$(command -v "wl-copy")" ] && { echo "$output" | wl-copy; } && exit
-  [ "$(command -v "pbcopy")" ] && { echo "$output" | pbcopy; } && exit
+if [ "$output" ]; then
+  if [ "${DISPLAY:-""}" ] && [ -z "${WAYLAND_DISPLAY:-""}" ] && [ "$(command -v "xclip")" ]; then
+    echo "$output" | xclip -sel "clipboard"
+    exit
+  fi
+
+  if [ "${WAYLAND_DISPLAY:-""}" ] && [ "$(command -v "wl-copy")" ]; then
+    echo "$output" | wl-copy
+    exit
+  fi
+
+  if [ "$(command -v "pbcopy")" ]; then
+    echo "$output" | pbcopy
+    exit
+  fi
 
   exit "1"
-}
+fi

@@ -79,25 +79,35 @@ menu_chars="$(echo "${arg_opt_n:-fzf --prompt='%P: ' --preview-window=hidden}" |
 menu_output="$(echo "${arg_opt_r:-fzf --prompt='%P: ' --preview-window=hidden}" | sed "s/%P/${prompt_output}/g")"
 
 path_file_unicodeblocks="$({
-  [ "$arg_opt_k" ] && echo "$arg_opt_k" || {
+  if [ "$arg_opt_k" ]; then
+    echo "$arg_opt_k"
+  else
     for path in "/usr/share/unicode/Blocks.txt" "${XDG_DATA_HOME:-$HOME/.local/share}/unicode/Blocks.txt"; do
-      [ -r "$path" ] && echo "$path" && break
+      if [ -r "$path" ]; then
+        echo "$path"
+        break
+      fi
     done
-  }
+  fi
 })"
 
 path_file_unicodedata="$({
-  [ "$arg_opt_t" ] && echo "$arg_opt_t" || {
+  if [ "$arg_opt_t" ]; then
+    echo "$arg_opt_t"
+  else
     for path in "/usr/share/unicode/UnicodeData.txt" "${XDG_DATA_HOME:-$HOME/.local/share}/unicode/UnicodeData.txt"; do
-      [ -r "$path" ] && echo "$path" && break
+      if [ -r "$path" ]; then
+        echo "$path"
+        break
+      fi
     done
-  }
+  fi
 })"
 
-[ -r "$path_file_unicodeblocks" ] && [ -r "$path_file_unicodedata" ] || {
+if [ ! -r "$path_file_unicodeblocks" ] || [ ! -r "$path_file_unicodedata" ]; then
   echo "${script}: This script requires the Blocks.txt and UnicodeData.txt files from the Unicode Character Database (UCD)." 1>&2
   exit "1"
-}
+fi
 
 file_unicodedata="$(cut -d ";" -f "1,2,11" --output-delimiter ";" "$path_file_unicodedata")"
 all_codes="$(echo "$file_unicodedata" | cut -d ";" -f "1")"
@@ -121,24 +131,23 @@ show_menu_blocks() {
   menu="blocks"
 
   selected_block_prev="$selected_block"
-
-  set +e
-  selected_block="$(echo "$menu_blocks_selectables" | eval "$menu_blocks")"
-  set -e
+  selected_block="$(set +e; echo "$menu_blocks_selectables" | eval "$menu_blocks"; set -e)"
 }
 
 show_menu_chars() {
   menu_prev="$menu"
   menu="chars" 
 
-  [ "$menu_prev" = "output" ] || { [ "$selected_block" ] && [ "$selected_block_prev" = "$selected_block" ]; } || {
+  if ! {
+    [ "$menu_prev" = "output" ] || { [ "$selected_block" ] && [ "$selected_block_prev" = "$selected_block" ]; }
+  }; then
     read -r "code_tgt_begin" "code_tgt_end" < <(
       printf "%s\n" "$selected_block" | sed -n "s/^\[ \(.*.\) \] -.*$/\1/p" | sed -n "s/\.\./ /p"
     )
 
-    [ "$code_tgt_begin" = "0000" ] && [ "$code_tgt_end" = "10FFFF" ] && {
+    if [ "$code_tgt_begin" = "0000" ] && [ "$code_tgt_end" = "10FFFF" ]; then
       unicodedata="$file_unicodedata" selection_codes="$all_codes"
-    } || {
+    else
       # For determining the unicode blocks inexact bounaries, the binary search implementation is extracted from https://github.com/andis-sprinkis/binary-search-shell
 
       space="$all_codes" len_space="$(echo "$space" | wc -l)"
@@ -150,13 +159,23 @@ show_menu_chars() {
         tgt="$(hex_to_dec "$code_tgt_begin")" idx_min="0" idx_max="$len_space"
         while [ "$idx_min" -lt "$idx_max" ]; do
           idx_mid="$(("$idx_min" + ("$idx_max" - "$idx_min") / "2"))"
-          [ "$(dec_at "$idx_mid")" -ge "$tgt" ] && idx_max="$idx_mid" || idx_min="$(("$idx_mid" + "1"))"
+
+          if [ "$(dec_at "$idx_mid")" -ge "$tgt" ]; then 
+            idx_max="$idx_mid"
+          else
+            idx_min="$(("$idx_mid" + "1"))"
+          fi
         done
 
         idx_res="$idx_min" res="$(dec_at "$idx_min")" idx_min="0" idx_max="$idx_res"
         while [ "$idx_min" -lt "$idx_max" ]; do
           idx_mid="$(("$idx_min" + ("$idx_max" - "$idx_min") / "2"))"
-          [ "$(dec_at "$idx_mid")" -eq "$res" ] && idx_max="$idx_mid" || idx_min="$(("$idx_mid" + "1"))"
+
+          if [ "$(dec_at "$idx_mid")" -eq "$res" ]; then
+            idx_max="$idx_mid"
+          else
+            idx_min="$(("$idx_mid" + "1"))"
+          fi
         done
 
         echo "$idx_min"
@@ -178,24 +197,23 @@ show_menu_chars() {
 
       unicodedata="$(echo "$file_unicodedata" | head -n "$idx_end" | tail -n"+$idx_begin")" 
       selection_codes="$(echo "$all_codes" | head -n "$idx_end" | tail -n"+$idx_begin")"
-    }
+    fi
 
     selection_names="$(echo "$unicodedata" | sed -e 's/;$//g' -e 's/;/ | /g' -e 's/$/ ]/g' -e 's/^/[ /g' | cut -d ";" -f "2,3")"
 
     selection_chars="$(
-      ifs_old=$IFS; IFS="
+      IFS_=$IFS; IFS="
 "
-
       for code in $selection_codes; do
-        [ "$code" = "0000" ] || [ "$code" = "000A" ] && {
+        IFS="$IFS_"
+
+        if [ "$code" = "0000" ] || [ "$code" = "000A" ]; then
           echo "[ ☠ ] -"
           continue
-        }
+        fi
 
         printf '[ %b ] -\n' "\\U$code"
       done
-
-      IFS=$ifs_old
     )"
 
     menu_chars_selectables="$(
@@ -204,7 +222,7 @@ show_menu_chars() {
         <(echo "$selection_codes" | sed -e 's/$/ ] -/g' -e 's/^/[ /g') \
         <(echo "$selection_names") \
     )"
-  }
+  fi
 
   selected_char_prev="$selected_char"
 
@@ -217,20 +235,20 @@ show_menu_output() {
   menu_prev="$menu"
   menu="output"
 
-  [ "$selected_char" ] && [ "$selected_char_prev" = "$selected_char" ] || {
-    selected_char_char="$(echo -n "$selected_char" | sed -n "s/^\[ \(.*.\) \] - \[ .*. \] - \[ .*. \]/\1/p")"
-    selected_char_code_point="$(echo -n "$selected_char" | sed -n "s/^\[ .*. \] - \[ \(.*.\) \] - \[ .*. \]/\1/p")"
-    selected_char_name="$(echo -n "$selected_char" | sed -n "s/^\[ .*. \] - \[ .*. \] - \[ \(.*.\) \]/\1/p")"
+  if [ "$selected_char" ] && [ "$selected_char_prev" != "$selected_char" ]; then
+    selected_char_char="$(printf "%s" "$selected_char" | sed -n "s/^\[ \(.*.\) \] - \[ .*. \] - \[ .*. \]/\1/p")"
+    selected_char_code_point="$(printf "%s" "$selected_char" | sed -n "s/^\[ .*. \] - \[ \(.*.\) \] - \[ .*. \]/\1/p")"
+    selected_char_name="$(printf "%s" "$selected_char" | sed -n "s/^\[ .*. \] - \[ .*. \] - \[ \(.*.\) \]/\1/p")"
 
     code_point_dec="$(hex_to_dec "$selected_char_code_point")"
     code_point_hex_no_pad="$(printf "%x" "$code_point_dec")"
     code_point_hex_4_pad="$(printf "%04x" "$code_point_dec")"
     code_point_hex_6_pad="$(printf "%06x" "$code_point_dec")"
     code_point_hex_8_pad="$(printf "%08x" "$code_point_dec")"
-    char_utf8_hex="$(echo -n "$selected_char_char" | hexdump -e '5/1 "0x%02x "' | sed -e 's/ 0x  //g')"
-    char_utf16_hex="$(echo -n "$selected_char_char" | iconv -f "utf-8" -t "utf-16" | hexdump -e '3/2 "0x%04x "' | sed -e 's/0xfeff //g' -e 's/ 0x    //g')"
-    char_utf32_hex="$(echo -n "$selected_char_char" | iconv -f "utf-8" -t "utf-32" | hexdump -e '2 "0x%08x"' | sed -e 's/0x0000feff//g')"
-    char_utf8_urlencode="$(echo -n "$selected_char_char" | hexdump -e '5/1 "%02x"' | sed -e 's/ *//g' -e 's/\(..\)/%\1/g')"
+    char_utf8_hex="$(printf "%s" "$selected_char_char" | hexdump -e '5/1 "0x%02x "' | sed -e 's/ 0x  //g')"
+    char_utf16_hex="$(printf "%s" "$selected_char_char" | iconv -f "utf-8" -t "utf-16" | hexdump -e '3/2 "0x%04x "' | sed -e 's/0xfeff //g' -e 's/ 0x    //g')"
+    char_utf32_hex="$(printf "%s" "$selected_char_char" | iconv -f "utf-8" -t "utf-32" | hexdump -e '2 "0x%08x"' | sed -e 's/0x0000feff//g')"
+    char_utf8_urlencode="$(printf "%s" "$selected_char_char" | hexdump -e '5/1 "%02x"' | sed -e 's/ *//g' -e 's/\(..\)/%\1/g')"
 
     output_char="$selected_char_char"
     output_name_std="$selected_char_name"
@@ -261,7 +279,7 @@ show_menu_output() {
 [ ${output_code_point_escape_css} ] - [ Code point | Hex. | Esc.| CSS ]
 [ ${output_code_point_escape_css_6_digit} ] - [ Code point | Hex. | Esc. | 6 digits | CSS ]
 [ ${output_url_wikipedia} ] - [ Wikipedia ]"
-  }
+  fi
 
   set +e
   selected_output="$(echo "$menu_output_selectables" | eval "$menu_output")"
@@ -269,26 +287,37 @@ show_menu_output() {
 }
 
 while true; do
-  [ ! "$selected_block" ] && {
-    [ "$menu" = "blocks" ] && exit "1"
+  if [ ! "$selected_block" ]; then
+    if [ "$menu" = "blocks" ]; then
+      exit "1"
+    fi
+
     show_menu_blocks
     continue
-  }
+  fi
 
-  [ ! "$selected_char" ] && {
-    [ "$menu" = "chars" ] && { show_menu_blocks && continue; }
+  if [ ! "$selected_char" ]; then
+    if [ "$menu" = "chars" ]; then
+      show_menu_blocks
+      continue
+    fi
+
     show_menu_chars
     continue
-  }
+  fi
 
-  [ ! "$selected_output" ] && {
-    [ "$menu" = "output" ] && { show_menu_chars && continue; }
+  if [ ! "$selected_output" ]; then
+    if [ "$menu" = "output" ]; then
+      show_menu_chars
+      continue
+    fi
+
     show_menu_output
     continue
-  }
+  fi
 
   break
 done
 
-output="$(echo -n "$selected_output" | sed -n "s/^\[ \(.*.\) \] - \[ .*. \]/\1/p")"
-echo -n "$output"
+output="$(printf "%s" "$selected_output" | sed -n "s/^\[ \(.*.\) \] - \[ .*. \]/\1/p")"
+printf "%s" "$output"
