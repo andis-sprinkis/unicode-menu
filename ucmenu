@@ -46,27 +46,34 @@ opt_r=
 opt_t=
 while getopts m:n:r:k:t:h name; do
   case $name in
-    h) echo "$help_info"
-       exit
-      ;;
-    m) opt_m="1"
-       arg_opt_m="$OPTARG"
-       ;;
-    n) opt_n="1"
-       arg_opt_n="$OPTARG"
-       ;;
-    r) opt_r="1"
-       arg_opt_r="$OPTARG"
-       ;;
-    k) opt_k="1"
-       arg_opt_k="$OPTARG"
-       ;;
-    k) opt_t="1"
-       arg_opt_t="$OPTARG"
-       ;;
-    ?) echo "$help_info" 1>&2
-       exit "2"
-       ;;
+    h)
+      echo "$help_info"
+      exit
+    ;;
+    m)
+      opt_m="1"
+      arg_opt_m="$OPTARG"
+    ;;
+    n)
+      opt_n="1"
+      arg_opt_n="$OPTARG"
+    ;;
+    r)
+      opt_r="1"
+      arg_opt_r="$OPTARG"
+    ;;
+    k)
+      opt_k="1"
+      arg_opt_k="$OPTARG"
+    ;;
+    k)
+      opt_t="1"
+      arg_opt_t="$OPTARG"
+    ;;
+    ?)
+      echo "$help_info" 1>&2
+      exit "2"
+    ;;
   esac
 done
 
@@ -114,7 +121,7 @@ all_codes="$(echo "$file_unicodedata" | cut -d ";" -f "1")"
 
 hex_to_dec() { printf '%d' "0x${1}"; }
 dec() { hex_to_dec "$1"; }
-at() { echo "$space" | sed "$(("$1" + "1"))!d"; } # +1 for 0-indexed idx conversion to line num
+at() { echo "$space" | sed "$(("$1" + "1"))q;d"; } # +1 for 0-indexed idx conversion to line num
 dec_at() { dec "$(at "$1")"; }
 
 file_unicodeblocks="$(cat "$path_file_unicodeblocks")"
@@ -242,9 +249,9 @@ show_menu_output() {
 
     code_point_dec="$(hex_to_dec "$selected_char_code_point")"
     code_point_hex_no_pad="$(printf "%x" "$code_point_dec")"
-    code_point_hex_4_pad="$(printf "%04x" "$code_point_dec")"
+    # code_point_hex_4_pad="$(printf "%04x" "$code_point_dec")"
     code_point_hex_6_pad="$(printf "%06x" "$code_point_dec")"
-    code_point_hex_8_pad="$(printf "%08x" "$code_point_dec")"
+    # code_point_hex_8_pad="$(printf "%08x" "$code_point_dec")"
     char_utf8_hex="$(printf "%s" "$selected_char_char" | hexdump -e '5/1 "0x%02x "' | sed -e 's/ 0x  //g')"
     char_utf16_hex="$(printf "%s" "$selected_char_char" | iconv -f "utf-8" -t "utf-16" | hexdump -e '3/2 "0x%04x "' | sed -e 's/0xfeff //g' -e 's/ 0x    //g')"
     char_utf32_hex="$(printf "%s" "$selected_char_char" | iconv -f "utf-8" -t "utf-32" | hexdump -e '2 "0x%08x"' | sed -e 's/0x0000feff//g')"
