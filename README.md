@@ -1,4 +1,4 @@
-# Unicode menu
+# `ucmenu`
 
 A Unicode character selector.
 
