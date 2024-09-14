@@ -14,7 +14,7 @@ ucmenu -h
 
 ## Requirements
 
--   A menu program, like `dmenu`, `wmenu`, `fzf`, `rofi`
+-   A menu program, like `dmenu`, `wmenu`, `fzf`
 -   The Unicode Character Database (UCD)
     -   [Home page](https://www.unicode.org/ucd/)
     -   Package
