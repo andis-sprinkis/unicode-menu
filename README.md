@@ -2,7 +2,7 @@
 
 A Unicode character selector.
 
-For use with a menu program to query a Unicode character's value, property or an escape sequence.
+Use with a menu program to query a Unicode character's value, property or an escape sequence.
 
 ## Usage
 
