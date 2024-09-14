@@ -1,8 +1,8 @@
 # Unicode menu
 
-A Unicode character selector interface.
+A Unicode character selector.
 
-Use with a menu program to query a Unicode character's value, property or an escape sequence.
+For use with a menu program to query a Unicode character's value, property or an escape sequence.
 
 ## Usage
 
