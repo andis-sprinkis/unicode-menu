@@ -3,7 +3,7 @@ set -e
 
 script="$(basename "$0")"
 help_info="NAME
-    ${script} - Use with a menu program to output a Unicode character's value, property or an escape sequence.
+    ${script} - Use with a menu program to query the value, property, or escape sequence of a Unicode character.
 
 SYNOPSIS
     ${script} [-b] [-m COMMAND] [-n COMMAND] [-r COMMAND] [-k FILE] [-t FILE]
