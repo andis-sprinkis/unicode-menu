@@ -1,6 +1,6 @@
 # `ucmenu`
 
-A Unicode character selector.
+The Unicode character selector.
 
 Use with a menu program to query a Unicode character's value, property or an escape sequence.
 
