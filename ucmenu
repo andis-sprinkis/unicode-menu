@@ -125,8 +125,8 @@ at() { echo "$space" | sed "$(("$1" + "1"))q;d"; } # +1 for 0-indexed idx conver
 dec_at() { dec "$(at "$1")"; }
 
 file_unicodeblocks="$(cat "$path_file_unicodeblocks")"
-idx_begin_blocks="$(echo "$file_unicodeblocks" | grep "^0000..007F" --line-number | cut -d ":" -f 1)"
-idx_end_blocks="$(echo "$file_unicodeblocks" | grep "^100000..10FFFF" --line-number | cut -d ":" -f 1)"
+idx_begin_blocks="$(echo "$file_unicodeblocks" | grep "^0000..007F" -n | cut -d ":" -f 1)"
+idx_end_blocks="$(echo "$file_unicodeblocks" | grep "^100000..10FFFF" -n | cut -d ":" -f 1)"
 
 unicodeblocks="0000..10FFFF; All
 $(echo "$file_unicodeblocks" | head -n "$idx_end_blocks" | tail -n"+$idx_begin_blocks")"
