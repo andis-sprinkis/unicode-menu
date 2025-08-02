@@ -121,7 +121,7 @@ all_codes="$(echo "$file_unicodedata" | cut -d ";" -f "1")"
 
 hex_to_dec() { printf '%d' "0x${1}"; }
 dec() { hex_to_dec "$1"; }
-at() { echo "$space" | sed "$(("$1" + "1"))q;d"; } # +1 for 0-indexed idx conversion to line num
+at() { echo "$space" | sed "$(($1 + 1))q;d"; } # +1 for 0-indexed idx conversion to line num
 dec_at() { dec "$(at "$1")"; }
 
 file_unicodeblocks="$(cat "$path_file_unicodeblocks")"
@@ -129,7 +129,7 @@ idx_begin_blocks="$(echo "$file_unicodeblocks" | grep "^0000..007F" -n | cut -d 
 idx_end_blocks="$(echo "$file_unicodeblocks" | grep "^100000..10FFFF" -n | cut -d ":" -f 1)"
 
 unicodeblocks="0000..10FFFF; All
-$(echo "$file_unicodeblocks" | head -n "$idx_end_blocks" | tail -n"+$idx_begin_blocks")"
+$(echo "$file_unicodeblocks" | sed "${idx_begin_blocks},${idx_end_blocks}!d")"
 
 menu_blocks_selectables="$(echo "$unicodeblocks" | sed -e 's/^/[ /g' -e 's/; / ] - [ /g' -e 's/$/ ]/g')"
 
@@ -165,45 +165,45 @@ show_menu_chars() {
 
         tgt="$(hex_to_dec "$code_tgt_begin")" idx_min="0" idx_max="$len_space"
         while [ "$idx_min" -lt "$idx_max" ]; do
-          idx_mid="$(("$idx_min" + ("$idx_max" - "$idx_min") / "2"))"
+          idx_mid="$((idx_min + (idx_max - idx_min) / 2))"
 
           if [ "$(dec_at "$idx_mid")" -ge "$tgt" ]; then 
             idx_max="$idx_mid"
           else
-            idx_min="$(("$idx_mid" + "1"))"
+            idx_min="$((idx_mid + 1))"
           fi
         done
 
         idx_res="$idx_min" res="$(dec_at "$idx_min")" idx_min="0" idx_max="$idx_res"
         while [ "$idx_min" -lt "$idx_max" ]; do
-          idx_mid="$(("$idx_min" + ("$idx_max" - "$idx_min") / "2"))"
+          idx_mid="$((idx_min + (idx_max - idx_min) / 2))"
 
           if [ "$(dec_at "$idx_mid")" -eq "$res" ]; then
             idx_max="$idx_mid"
           else
-            idx_min="$(("$idx_mid" + "1"))"
+            idx_min="$((idx_mid + 1))"
           fi
         done
 
         echo "$idx_min"
-      })" + "1"))"
+      })" + 1))"
 
       idx_end="$(("$(
         # Binary search:
         # - Equality - less-or-equal
         # - Repetition boundary - max. index
 
-        tgt="$(hex_to_dec "$code_tgt_end")" idx_min="-1" idx_max="$(("$len_space" - "1"))"
+        tgt="$(hex_to_dec "$code_tgt_end")" idx_min="-1" idx_max="$((len_space - 1))"
         while [ "$idx_min" -lt "$idx_max" ]; do
-          idx_mid="$(("$idx_min" + ("$idx_max" - "$idx_min") / "2"))"
-          [ "$(dec_at $(("$idx_mid" + "1")))" -gt "$tgt" ] && idx_max="$idx_mid" || idx_min="$(("$idx_mid" + "1"))"
+          idx_mid="$((idx_min + (idx_max - idx_min) / 2))"
+          [ "$(dec_at $((idx_mid + 1)))" -gt "$tgt" ] && idx_max="$idx_mid" || idx_min="$((idx_mid + 1))"
         done
 
         echo "$idx_min"
-      )" + "1"))"
+      )" + 1))"
 
-      unicodedata="$(echo "$file_unicodedata" | head -n "$idx_end" | tail -n"+$idx_begin")" 
-      selection_codes="$(echo "$all_codes" | head -n "$idx_end" | tail -n"+$idx_begin")"
+      unicodedata="$(echo "$file_unicodedata" | sed "${idx_begin},${idx_end}!d")"
+      selection_codes="$(echo "$all_codes" | sed "${idx_begin},${idx_end}!d")"
     fi
 
     selection_names="$(echo "$unicodedata" | sed -e 's/;$//g' -e 's/;/ | /g' -e 's/$/ ]/g' -e 's/^/[ /g' | cut -d ";" -f "2,3")"
